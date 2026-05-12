@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './LandingPage.module.css';
-import { BarChart2, Upload, Zap, TrendingUp, PieChart, Download, ArrowRight, CheckCircle } from 'lucide-react';
+import { BarChart2, Upload, Zap, TrendingUp, PieChart, Download, ArrowRight } from 'lucide-react';
 import SampleChart from './SampleChart';
 
 const FEATURES = [
@@ -39,11 +39,7 @@ const FEATURES = [
   },
 ];
 
-const PLANS = [
-  { name: 'Free', price: '무료', features: ['월 10회 차트 생성', '기본 차트 3종', 'PNG 내보내기'], highlight: false },
-  { name: 'Pro', price: '₩9,900/월', features: ['무제한 차트 생성', '모든 차트 유형', 'AI 인사이트', 'PDF 내보내기', '대시보드 5개'], highlight: true },
-  { name: 'Team', price: '₩7,900/인/월', features: ['Pro 모든 기능', '팀 워크스페이스', 'URL 공유', '정기 이메일 발송'], highlight: false },
-];
+
 
 export default function LandingPage() {
   const router = useRouter();
@@ -70,7 +66,6 @@ export default function LandingPage() {
           </div>
           <div className={styles.navLinks}>
             <a href="#features">기능</a>
-            <a href="#pricing">요금제</a>
           </div>
           <button className="btn btn-primary btn-sm" onClick={() => router.push('/upload')} id="nav-start-btn">
             무료로 시작 <ArrowRight size={14} />
@@ -153,37 +148,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className={styles.pricing}>
-        <div className="container">
-          <div className={`${styles.sectionHeader} text-center`}>
-            <h2>합리적인 <span className="gradient-text">요금제</span></h2>
-            <p>팀 규모에 맞게 선택하세요</p>
-          </div>
-          <div className={styles.pricingGrid}>
-            {PLANS.map((plan, i) => (
-              <div key={i} className={`${styles.pricingCard} ${plan.highlight ? styles.pricingHighlight : ''} card`}>
-                {plan.highlight && <div className={styles.popularBadge}>인기</div>}
-                <h3 className={styles.planName}>{plan.name}</h3>
-                <div className={styles.planPrice}>{plan.price}</div>
-                <ul className={styles.planFeatures}>
-                  {plan.features.map((feat, j) => (
-                    <li key={j}><CheckCircle size={14} />{feat}</li>
-                  ))}
-                </ul>
-                <button
-                  id={`plan-${plan.name.toLowerCase()}-btn`}
-                  className={`btn ${plan.highlight ? 'btn-primary' : 'btn-secondary'} w-full`}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => router.push('/upload')}
-                >
-                  시작하기
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FOOTER */}
       <footer className={styles.footer}>

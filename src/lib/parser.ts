@@ -134,3 +134,97 @@ export async function parseFile(file: File, sheetName?: string): Promise<ParseRe
 
   return { data, headers, sheetNames, warnings };
 }
+
+/**
+ * Excel/Google Sheets에서 복사한 텍스트(TSV 또는 CSV)를 파싱합니다.
+ * Ctrl+C로 복사한 셀 데이터를 붙여넣으면 탭(\t) 구분자로 옵니다.
+ */
+export function parsePastedText(text: string): ParseResult {
+  const warnings: string[] = [];
+
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+    .filter(l => l.trim() !== '');
+
+  if (lines.length < 2) {
+    return { data: [], headers: [], sheetNames: ['붙여넣기'], warnings: ['최소 2행(헤더+데이터)이 필요합니다.'] };
+  }
+
+  // Detect delimiter: tab (Excel) or comma (CSV)
+  const firstLine = lines[0];
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const delimiter = tabCount >= commaCount ? '\t' : ',';
+
+  // Parse rows — handle quoted CSV fields
+  const parseRow = (line: string): string[] => {
+    if (delimiter === '\t') return line.split('\t');
+    const result: string[] = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if (ch === ',' && !inQuote) {
+        result.push(cur); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur);
+    return result;
+  };
+
+  const rawRows = lines.map(parseRow);
+  const headerRow = rawRows[0].map((h, i) => h.trim() || `컬럼 ${i + 1}`);
+  const dataRows = rawRows.slice(1);
+
+  const colCount = headerRow.length;
+
+  // Detect types
+  const columnValues = headerRow.map((_, ci) => dataRows.map(row => row[ci] ?? ''));
+  const headers: ColumnDef[] = headerRow.map((name, i) => ({
+    name,
+    type: detectType(columnValues[i]),
+    index: i,
+  }));
+
+  // Build rows
+  const data: Row[] = dataRows
+    .filter(row => row.some(v => v !== '' && v !== undefined))
+    .map(row => {
+      const obj: Row = {};
+      headers.forEach((col, i) => {
+        const raw = row[i] ?? '';
+        if (col.type === 'number') {
+          obj[col.name] = cleanNumericValue(raw);
+        } else if (col.type === 'date') {
+          obj[col.name] = raw ? normalizeDate(raw) : null;
+        } else {
+          obj[col.name] = raw || null;
+        }
+      });
+      return obj;
+    });
+
+  if (data.length === 0) {
+    warnings.push('데이터 행을 찾을 수 없습니다. 형식을 확인해주세요.');
+  }
+
+  const missingCounts: Record<string, number> = {};
+  headers.forEach(h => {
+    const missing = data.filter(r => r[h.name] === null || r[h.name] === undefined).length;
+    if (missing > 0) missingCounts[h.name] = missing;
+  });
+  if (Object.keys(missingCounts).length > 0) {
+    warnings.push(`결측값 발견: ${Object.entries(missingCounts).map(([k, v]) => `${k}(${v}개)`).join(', ')}`);
+  }
+
+  if (colCount !== headerRow.length) {
+    warnings.push('일부 행의 열 수가 헤더와 다릅니다. 데이터를 확인해주세요.');
+  }
+
+  return { data, headers, sheetNames: ['붙여넣기'], warnings };
+}

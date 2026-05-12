@@ -42,6 +42,7 @@ export default function ChartEditorPage() {
           fileName: '샘플데이터.xlsx',
         },
       });
+      dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: demoData, transformType: 'none' } });
       dispatch({ type: 'SET_X_AXIS', payload: '월' });
       dispatch({ type: 'SET_Y_AXES', payload: ['매출', '비용'] });
     }
@@ -55,16 +56,16 @@ export default function ChartEditorPage() {
     }
   }, [state.rawData, state.xAxis, state.yAxes, state.fileName, dispatch]);
 
-  // Enrich data with stats overlays
-  const enrichedData = (state.rawData.length > 0 && state.xAxis && state.yAxes.length > 0)
-    ? enrichData(state.rawData, state.xAxis, state.yAxes, {
+  // Enrich data with stats overlays — use displayData (may be transformed)
+  const enrichedData = (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0)
+    ? enrichData(state.displayData, state.xAxis, state.yAxes, {
         ytdAvg: state.options.showCumulativeAverage,
         rollingAvg: state.options.showRollingAverage,
         rollingN: state.options.rollingAveragePeriod,
       })
     : [];
 
-  const hasData = state.rawData.length > 0 && state.xAxis && state.yAxes.length > 0;
+  const hasData = state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0;
 
   return (
     <div className={styles.root}>

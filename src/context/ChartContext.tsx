@@ -6,6 +6,13 @@ export type ChartType =
   | 'line' | 'bar' | 'stacked-bar' | 'combo'
   | 'area' | 'pie' | 'donut' | 'scatter' | 'radar';
 
+export type TransformType =
+  | 'none'
+  | 'col-pct'    // 열(연도/기간) 기준 비중 — 각 열 합계 대비 %
+  | 'row-pct'    // 행(항목) 기준 비중 — 각 행 합계 대비 %
+  | 'total-pct'  // 전체 합계 대비 %
+  | 'rank';      // 순위
+
 export interface ColumnDef {
   name: string;
   type: 'date' | 'number' | 'category' | 'ignore';
@@ -42,6 +49,8 @@ export interface InsightItem {
 
 export interface ChartState {
   rawData: Row[];
+  displayData: Row[];       // transformed data for rendering
+  transformType: TransformType;
   headers: ColumnDef[];
   xAxis: string;
   yAxes: string[];
@@ -73,6 +82,8 @@ const defaultOptions: ChartOptions = {
 
 const initialState: ChartState = {
   rawData: [],
+  displayData: [],
+  transformType: 'none',
   headers: [],
   xAxis: '',
   yAxes: [],
@@ -86,6 +97,7 @@ const initialState: ChartState = {
 
 type Action =
   | { type: 'SET_DATA'; payload: { data: Row[]; headers: ColumnDef[]; fileName: string } }
+  | { type: 'SET_DISPLAY_DATA'; payload: { data: Row[]; transformType: TransformType } }
   | { type: 'SET_X_AXIS'; payload: string }
   | { type: 'SET_Y_AXES'; payload: string[] }
   | { type: 'SET_GROUP_BY'; payload: string }
@@ -101,12 +113,20 @@ function reducer(state: ChartState, action: Action): ChartState {
       return {
         ...state,
         rawData: action.payload.data,
+        displayData: action.payload.data,
+        transformType: 'none',
         headers: action.payload.headers,
         fileName: action.payload.fileName,
         xAxis: '',
         yAxes: [],
         groupBy: '',
         insights: [],
+      };
+    case 'SET_DISPLAY_DATA':
+      return {
+        ...state,
+        displayData: action.payload.data,
+        transformType: action.payload.transformType,
       };
     case 'SET_X_AXIS':
       return { ...state, xAxis: action.payload };

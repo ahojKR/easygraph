@@ -1,0 +1,99 @@
+.wrapper { display: flex; flex-direction: column; gap: 16px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.section { padding: 24px; }
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sectionIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sectionHeader h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 2px; }
+.sectionHeader p { font-size: 0.8rem; color: var(--text-muted); }
+
+.colList { display: flex; flex-direction: column; gap: 6px; }
+
+.colBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+.colBtn:hover {
+  border-color: var(--border-focus);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.selected {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.08) !important;
+  color: var(--text-primary) !important;
+}
+.colBtn span:nth-child(2) { flex: 1; }
+.typeTag { font-size: 0.72rem; font-weight: 600; margin-left: auto; }
+.check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,212,255,0.2);
+  color: var(--accent-aqua);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.noData { color: var(--text-muted); font-size: 0.875rem; padding: 8px 0; }
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 20px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--accent-green);
+}
+.summary strong { color: var(--text-primary); }
+
+.hint {
+  padding: 12px 20px;
+  background: rgba(0,212,255,0.06);
+  border: 1px dashed var(--border-card);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,82 @@
+.wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.meta strong { color: var(--text-primary); }
+.typeLegend { display: flex; gap: 16px; }
+.tableWrap {
+  overflow: auto;
+  max-height: 420px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.table thead {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  z-index: 2;
+}
+.table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.thInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.colName { color: var(--text-primary); }
+.typeBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 100px;
+  border: 1px solid;
+  opacity: 0.85;
+}
+.table td {
+  padding: 8px 16px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.table tr:hover td { background: var(--bg-card-hover); }
+.rowNum {
+  color: var(--text-muted) !important;
+  font-size: 0.75rem;
+  width: 40px;
+  text-align: center;
+}
+.empty td { background: rgba(239,68,68,0.03); }
+.nullBadge {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.moreRows {
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+}

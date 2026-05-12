@@ -1,0 +1,81 @@
+.wrapper {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 8px 0 10px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 8px;
+}
+.toggleInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toggleLabel {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.toggleDesc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.colorSchemes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.schemeBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.schemeBtn:hover {
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+}
+.schemeActive {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.08) !important;
+  color: var(--accent-aqua) !important;
+}
+.schemeDots { display: flex; gap: 3px; }
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}

@@ -16,6 +16,8 @@ const COLOR_SCHEMES: Record<string, string[]> = {
   sunset:  ['#f97316','#ec4899','#a855f7','#ef4444','#f59e0b','#e11d48','#9333ea','#fb923c'],
   forest:  ['#22c55e','#84cc16','#10b981','#16a34a','#4ade80','#65a30d','#15803d','#a3e635'],
   mono:    ['#f0f4ff','#a8b2c8','#8892b0','#6b7a99','#4a5568','#374151','#2d3748','#1f2937'],
+  // B/W 모드: 목표 차트와 동일한 진회색계 (어두운순 → 밝은순)
+  bw:      ['#2d3748','#718096','#cbd5e0','#edf2f7','#a0aec0','#4a5568','#1a202c','#e2e8f0'],
 };
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number | null }[]; label?: string }) => {
@@ -38,6 +40,29 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 const AXIS_STYLE = { fill: '#8892b0', fontSize: 12 };
 const GRID_STYLE = { stroke: 'rgba(255,255,255,0.05)', strokeDasharray: '3 3' };
+
+// 스택드 바 X축: 첨째 줄 = 기간(Jan-Jul), 두번째 줄 = Subsidiary
+const CustomGroupTick = (props: {
+  x?: number; y?: number; payload?: { value: string };
+}) => {
+  const { x = 0, y = 0, payload } = props;
+  const raw   = payload?.value ?? '';
+  const parts = raw.split('\n');          // ['LGEIN', 'Jan–Jul'] or ['Jan–Jul']
+  const sub    = parts.length >= 2 ? parts[0] : '';
+  const period = parts.length >= 2 ? parts[1] : parts[0];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={14} textAnchor="middle" fill="#a8b2c8" fontSize={11}>
+        {period}
+      </text>
+      {sub && (
+        <text x={0} y={0} dy={28} textAnchor="middle" fill="#6b7a99" fontSize={10}>
+          {sub}
+        </text>
+      )}
+    </g>
+  );
+};
 
 interface Props { data: Row[] }
 
@@ -268,7 +293,15 @@ export default function ChartCanvas({ data }: Props) {
             barCategoryGap="20%"
             margin={{ top: isStacked ? 44 : 24, right: 24, bottom: 8, left: 8 }}
           >
-            {gridEl}{xAxisEl}{yAxisEl}{tooltipEl}{legendEl}{targetLine}
+            {gridEl}
+            <XAxis
+              dataKey={xAxis}
+              tick={isStacked ? <CustomGroupTick /> : AXIS_STYLE}
+              axisLine={false}
+              tickLine={false}
+              height={isStacked ? 48 : 30}
+            />
+            {yAxisEl}{tooltipEl}{legendEl}{targetLine}
             {yAxes.map((y, i) => {
               const isLast = i === yAxes.length - 1;
               return (

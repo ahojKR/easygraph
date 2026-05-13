@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle, X, ArrowRight, BarChart2, ClipboardPaste } from 'lucide-react';
 import { parseFile, parsePastedText, ParseResult } from '@/lib/parser';
 import { useChart } from '@/context/ChartContext';
-import ColumnMapper from './ColumnMapper';
+import SmartAxisMapper from './SmartAxisMapper';
 import DataPreview from './DataPreview';
 import AnalysisConfig from './AnalysisConfig';
 import DataTransform from './DataTransform';
@@ -323,7 +323,7 @@ export default function UploadPage() {
                 </button>
               </div>
             </div>
-            <ColumnMapper headers={result.headers} />
+            <SmartAxisMapper headers={result.headers} />
           </div>
         )}
 

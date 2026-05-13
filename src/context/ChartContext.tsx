@@ -101,6 +101,7 @@ const initialState: ChartState = {
 
 type Action =
   | { type: 'SET_DATA'; payload: { data: Row[]; headers: ColumnDef[]; fileName: string } }
+  | { type: 'REPAIR_DATA'; payload: { data: Row[]; headers: ColumnDef[] } }
   | { type: 'SET_DISPLAY_DATA'; payload: { data: Row[]; transformType: TransformType } }
   | { type: 'SET_X_AXIS'; payload: string }
   | { type: 'SET_Y_AXES'; payload: string[] }
@@ -126,6 +127,15 @@ function reducer(state: ChartState, action: Action): ChartState {
         groupBy: '',
         insights: [],
       };
+    case 'REPAIR_DATA':
+      return {
+        ...state,
+        rawData: action.payload.data,
+        displayData: action.payload.data,
+        headers: action.payload.headers,
+        transformType: 'none',
+      };
+
     case 'SET_DISPLAY_DATA':
       return {
         ...state,

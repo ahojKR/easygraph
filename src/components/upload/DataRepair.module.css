@@ -1,0 +1,143 @@
+.root { display: flex; flex-direction: column; gap: 24px; }
+
+/* 헤더 */
+.header { display: flex; align-items: flex-start; gap: 14px; }
+.headerLeft { display: flex; align-items: flex-start; gap: 14px; }
+.title { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+.subtitle { font-size: 0.875rem; color: var(--text-muted); }
+
+/* 문제 카드 */
+.issueList { display: flex; flex-direction: column; gap: 12px; }
+
+.issueCard {
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.issueAccepted { border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.05); }
+.issueRejected { opacity: 0.5; border-color: var(--border-subtle); }
+
+.issueTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.issueTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
+.issueDesc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+.issuePrev {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.issuePrev em { color: var(--accent-aqua); font-style: normal; font-weight: 600; }
+
+.issueActions { display: flex; gap: 6px; }
+.actionBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--border-card);
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.actionBtn:hover { border-color: var(--border-focus); color: var(--text-primary); }
+.actionAccept {
+  border-color: var(--accent-orange) !important;
+  background: rgba(245,158,11,0.1) !important;
+  color: var(--accent-orange) !important;
+  font-weight: 700;
+}
+.actionReject {
+  border-color: rgba(239,68,68,0.4) !important;
+  background: rgba(239,68,68,0.06) !important;
+  color: var(--accent-red) !important;
+}
+
+.affectedCols { display: flex; flex-wrap: wrap; gap: 6px; }
+.colTag {
+  padding: 2px 9px;
+  border-radius: 100px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+/* 미리보기 테이블 */
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.previewHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.previewMeta { margin-left: auto; font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
+
+.tableScroll { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-card); }
+.table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.table th {
+  padding: 9px 12px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.table td {
+  padding: 8px 12px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: rgba(0,212,255,0.03); }
+.null { color: var(--text-muted); font-style: italic; }
+
+/* 푸터 */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.appliedMsg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--accent-green);
+}
+
+/* 문제 없음 상태 */
+.clean {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 40px;
+  text-align: center;
+}
+.clean h2 { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); }
+.clean p { font-size: 0.9rem; color: var(--text-muted); max-width: 400px; line-height: 1.6; }

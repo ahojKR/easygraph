@@ -7,21 +7,23 @@ import { parseFile, parsePastedText, ParseResult } from '@/lib/parser';
 import { useChart } from '@/context/ChartContext';
 import SmartAxisMapper from './SmartAxisMapper';
 import DataPreview from './DataPreview';
+import DataRepair from './DataRepair';
 import AnalysisConfig from './AnalysisConfig';
 import DataTransform from './DataTransform';
 import styles from './UploadPage.module.css';
 
-type Step = 'upload' | 'preview' | 'map' | 'transform' | 'config';
+type Step = 'upload' | 'preview' | 'repair' | 'map' | 'transform' | 'config';
 
 const STEP_LABELS: Record<Step, string> = {
   upload:    '파일 업로드',
   preview:   '데이터 확인',
+  repair:    '데이터 정제',
   map:       '축 설정',
   transform: '데이터 변환',
   config:    '그래프 설정',
 };
 
-const STEP_ORDER: Step[] = ['upload', 'preview', 'map', 'transform', 'config'];
+const STEP_ORDER: Step[] = ['upload', 'preview', 'repair', 'map', 'transform', 'config'];
 
 export default function UploadPage() {
   const router = useRouter();
@@ -287,8 +289,8 @@ export default function UploadPage() {
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn btn-secondary" onClick={() => setStep('upload')} id="back-upload-btn">← 다시 업로드</button>
-                <button className="btn btn-primary" onClick={() => setStep('map')} id="next-map-btn">
-                  축 설정 <ArrowRight size={16} />
+                <button className="btn btn-primary" onClick={() => setStep('repair')} id="next-map-btn">
+                  데이터 정제 <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -302,16 +304,32 @@ export default function UploadPage() {
           </div>
         )}
 
+        {/* STEP 2.5: DATA REPAIR */}
+        {step === 'repair' && result && (
+          <div className="animate-fadeIn">
+            <div className={styles.stepHeader}>
+              <div>
+                <h1 className={styles.title}>데이터 정제</h1>
+                <p className={styles.subtitle}>결측값·컬럼명 문제를 수정하고 테이블을 완성하세요</p>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn btn-secondary" onClick={() => setStep('preview')} id="back-to-preview-btn">← 데이터 확인</button>
+              </div>
+            </div>
+            <DataRepair onDone={() => setStep('map')} />
+          </div>
+        )}
+
         {/* STEP 3: AXIS MAPPING */}
-        {step === 'map' && result && (
+        {step === 'map' && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
                 <h1 className={styles.title}>축 설정</h1>
-                <p className={styles.subtitle}>X축(가로)과 Y축(세로)에 사용할 컬럼을 선택하세요</p>
+                <p className={styles.subtitle}>가로·세로축에 표시할 내용을 선택하세요</p>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('preview')} id="back-preview-btn">← 데이터 확인</button>
+                <button className="btn btn-secondary" onClick={() => setStep('repair')} id="back-preview-btn">← 데이터 정제</button>
                 <button
                   className="btn btn-primary"
                   onClick={() => setStep('transform')}
@@ -323,7 +341,7 @@ export default function UploadPage() {
                 </button>
               </div>
             </div>
-            <SmartAxisMapper headers={result.headers} />
+            <SmartAxisMapper headers={state.headers} />
           </div>
         )}
 

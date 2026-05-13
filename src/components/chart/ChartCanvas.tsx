@@ -214,6 +214,43 @@ export default function ChartCanvas({ data }: Props) {
 
   // BAR / STACKED BAR
   if (chartType === 'bar' || chartType === 'stacked-bar') {
+    const isStacked = chartType === 'stacked-bar';
+
+    // Custom label: shows total + YoY on top of stacked bar
+    const StackedTopLabel = (props: {
+      x?: number; y?: number; width?: number; value?: number;
+      index?: number;
+    }) => {
+      const { x = 0, y = 0, width = 0, index = 0 } = props;
+      const row = data[index] as Record<string, string | number | null> | undefined;
+      if (!row) return null;
+      const total = Number(row['_total'] ?? 0);
+      const yoy   = row['_yoy'] !== undefined ? Number(row['_yoy']) : null;
+      if (!total) return null;
+      return (
+        <g>
+          {/* 합계 */}
+          <text
+            x={x + width / 2} y={y - 6}
+            textAnchor="middle" fill="#f0f4ff" fontSize={11} fontWeight={700}
+          >
+            {total >= 1000 ? `${(total / 1000).toFixed(1)}K` : total.toLocaleString()}
+          </text>
+          {/* YoY 성장률 */}
+          {yoy !== null && (
+            <text
+              x={x + width / 2} y={y - 20}
+              textAnchor="middle"
+              fill={yoy >= 0 ? '#10b981' : '#ef4444'}
+              fontSize={11} fontWeight={800}
+            >
+              {yoy >= 0 ? '▲' : '▼'}{Math.abs(yoy)}%
+            </text>
+          )}
+        </g>
+      );
+    };
+
     return (
       <div>
         {options.showMoMChange && momChanges.length > 0 && (
@@ -225,24 +262,61 @@ export default function ChartCanvas({ data }: Props) {
             ))}
           </div>
         )}
-        <ResponsiveContainer width="100%" height={380}>
-          <BarChart {...commonProps} barCategoryGap="25%">
+        <ResponsiveContainer width="100%" height={420}>
+          <BarChart
+            {...commonProps}
+            barCategoryGap="20%"
+            margin={{ top: isStacked ? 44 : 24, right: 24, bottom: 8, left: 8 }}
+          >
             {gridEl}{xAxisEl}{yAxisEl}{tooltipEl}{legendEl}{targetLine}
-            {yAxes.map((y, i) => (
-              <Bar key={y} dataKey={y} fill={colors[i]} radius={[4, 4, 0, 0]}
-                stackId={chartType === 'stacked-bar' ? 'stack' : undefined}>
-                {options.showDataLabels && <LabelList dataKey={y} position="top" style={{ fill: colors[i], fontSize: 11 }} />}
-                {chartType !== 'stacked-bar' && data.map((_, di) => (
-                  <Cell key={di} fill={outlierSet.has(di) ? '#ef4444' : colors[i]} />
-                ))}
-              </Bar>
-            ))}
+            {yAxes.map((y, i) => {
+              const isLast = i === yAxes.length - 1;
+              return (
+                <Bar
+                  key={y}
+                  dataKey={y}
+                  fill={colors[i]}
+                  radius={isLast && isStacked ? [4, 4, 0, 0] : (!isStacked ? [4, 4, 0, 0] : [0, 0, 0, 0])}
+                  stackId={isStacked ? 'stack' : undefined}
+                >
+                  {/* 개별 값 라벨 (세그먼트 내부) */}
+                  {options.showDataLabels && (
+                    <LabelList
+                      dataKey={y}
+                      position="inside"
+                      style={{ fill: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: 700 }}
+                      formatter={(v: unknown) => {
+                        const n = Number(v);
+                        return n > 0 ? n.toLocaleString() : '';
+                      }}
+                    />
+                  )}
+                  {/* 마지막 스택에 합계+YoY 커스텀 라벨 */}
+                  {isStacked && isLast && (
+                    <LabelList content={<StackedTopLabel />} />
+                  )}
+                  {/* 일반 바에 합계 라벨 */}
+                  {!isStacked && options.showDataLabels && (
+                    <LabelList
+                      dataKey={y}
+                      position="top"
+                      style={{ fill: colors[i], fontSize: 11 }}
+                    />
+                  )}
+                  {/* 이상값 색상 */}
+                  {!isStacked && data.map((_, di) => (
+                    <Cell key={di} fill={outlierSet.has(di) ? '#ef4444' : colors[i]} />
+                  ))}
+                </Bar>
+              );
+            })}
             {overlayLines}
           </BarChart>
         </ResponsiveContainer>
       </div>
     );
   }
+
 
   // COMBO (Line + Bar)
   if (chartType === 'combo') {

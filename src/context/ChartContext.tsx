@@ -8,10 +8,14 @@ export type ChartType =
 
 export type TransformType =
   | 'none'
-  | 'col-pct'    // 열(연도/기간) 기준 비중 — 각 열 합계 대비 %
-  | 'row-pct'    // 행(항목) 기준 비중 — 각 행 합계 대비 %
-  | 'total-pct'  // 전체 합계 대비 %
-  | 'rank';      // 순위
+  | 'col-pct'       // 열(연도/기간) 기준 비중
+  | 'row-pct'       // 행(항목) 기준 비중
+  | 'total-pct'     // 전체 합계 기준 비중
+  | 'rank'          // 순위
+  | 'cumulative'    // 누적 합계
+  | 'period-quarter'  // 월 → 분기 집계
+  | 'period-half';    // 월 → 반기 집계
+
 
 export interface ColumnDef {
   name: string;

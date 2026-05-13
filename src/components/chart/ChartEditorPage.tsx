@@ -10,23 +10,24 @@ import ChartCanvas from './ChartCanvas';
 import ChartTypeSelector from './ChartTypeSelector';
 import SettingsPanel from './SettingsPanel';
 import InsightPanel from './InsightPanel';
+import DataTable from './DataTable';
 import styles from './ChartEditorPage.module.css';
 import { BarChart2, Download, RefreshCw, ArrowLeft, FileImage, FileText } from 'lucide-react';
 
 export default function ChartEditorPage() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const isDemo = searchParams.get('demo') === 'true';
+  const isDemo       = searchParams.get('demo') === 'true';
   const { state, dispatch } = useChart();
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Load demo data if needed
+  // Load demo data
   useEffect(() => {
     if (isDemo && state.rawData.length === 0) {
       const demoData = Array.from({ length: 12 }, (_, i) => ({
-        '월': `${i + 1}월`,
-        '매출': Math.floor(3000 + Math.random() * 5000),
-        '비용': Math.floor(2000 + Math.random() * 3000),
+        '월':    `${i + 1}월`,
+        '매출':  Math.floor(3000 + Math.random() * 5000),
+        '비용':  Math.floor(2000 + Math.random() * 3000),
         '고객수': Math.floor(100 + Math.random() * 400),
       }));
       dispatch({
@@ -34,21 +35,21 @@ export default function ChartEditorPage() {
         payload: {
           data: demoData,
           headers: [
-            { name: '월', type: 'date', index: 0 },
-            { name: '매출', type: 'number', index: 1 },
-            { name: '비용', type: 'number', index: 2 },
+            { name: '월',    type: 'date',   index: 0 },
+            { name: '매출',  type: 'number', index: 1 },
+            { name: '비용',  type: 'number', index: 2 },
             { name: '고객수', type: 'number', index: 3 },
           ],
           fileName: '샘플데이터.xlsx',
         },
       });
       dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: demoData, transformType: 'none' } });
-      dispatch({ type: 'SET_X_AXIS', payload: '월' });
-      dispatch({ type: 'SET_Y_AXES', payload: ['매출', '비용'] });
+      dispatch({ type: 'SET_X_AXIS',  payload: '월' });
+      dispatch({ type: 'SET_Y_AXES',  payload: ['매출', '비용'] });
     }
   }, [isDemo, state.rawData.length, dispatch]);
 
-  // Generate insights when data/axes change
+  // Generate insights
   useEffect(() => {
     if (state.rawData.length > 0 && state.xAxis && state.yAxes.length > 0) {
       const insights = generateMockInsights(state.rawData, state.xAxis, state.yAxes, state.fileName);
@@ -56,12 +57,12 @@ export default function ChartEditorPage() {
     }
   }, [state.rawData, state.xAxis, state.yAxes, state.fileName, dispatch]);
 
-  // Enrich data with stats overlays — use displayData (may be transformed)
+  // Use displayData (may be transformed) for rendering
   const enrichedData = (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0)
     ? enrichData(state.displayData, state.xAxis, state.yAxes, {
-        ytdAvg: state.options.showCumulativeAverage,
+        ytdAvg:    state.options.showCumulativeAverage,
         rollingAvg: state.options.showRollingAverage,
-        rollingN: state.options.rollingAveragePeriod,
+        rollingN:   state.options.rollingAveragePeriod,
       })
     : [];
 
@@ -96,11 +97,7 @@ export default function ChartEditorPage() {
             <RefreshCw size={14} /> 인사이트 갱신
           </button>
           <div className={styles.exportGroup}>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => exportToPNG(chartRef)}
-              id="export-png-btn"
-            >
+            <button className="btn btn-ghost btn-sm" onClick={() => exportToPNG(chartRef)} id="export-png-btn">
               <FileImage size={14} /> PNG
             </button>
             <button
@@ -121,7 +118,7 @@ export default function ChartEditorPage() {
           <SettingsPanel />
         </aside>
 
-        {/* CENTER: Chart Canvas */}
+        {/* CENTER: Chart + DataTable */}
         <main className={styles.main}>
           {!hasData ? (
             <div className={styles.emptyState}>
@@ -134,15 +131,21 @@ export default function ChartEditorPage() {
             </div>
           ) : (
             <div className={styles.chartArea}>
-              {/* Chart title */}
+              {/* 차트 제목 */}
               {state.options.chartTitle && (
                 <h2 className={styles.chartTitle}>{state.options.chartTitle}</h2>
               )}
+
+              {/* 그래프 */}
               <div ref={chartRef} className={styles.chartWrapper}>
                 <ChartCanvas data={enrichedData} />
               </div>
-              {/* Insight panel below chart */}
+
+              {/* AI 인사이트 */}
               <InsightPanel />
+
+              {/* 데이터 테이블 (하단) */}
+              <DataTable />
             </div>
           )}
         </main>

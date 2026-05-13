@@ -46,8 +46,12 @@ export interface ChartOptions {
 }
 
 export interface InsightItem {
-  type: 'trend' | 'anomaly' | 'summary' | 'comparison';
-  text: string;
+  id?:      string;
+  type:     'trend' | 'anomaly' | 'summary' | 'comparison';
+  title?:   string;
+  text?:    string;
+  content?: string;
+  value?:   number;
   severity?: 'info' | 'warning' | 'positive';
 }
 

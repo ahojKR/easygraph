@@ -11,8 +11,9 @@ import ChartTypeSelector from './ChartTypeSelector';
 import SettingsPanel from './SettingsPanel';
 import InsightPanel from './InsightPanel';
 import DataTable from './DataTable';
+import KPIBar from './KPIBar';
 import styles from './ChartEditorPage.module.css';
-import { BarChart2, Download, RefreshCw, ArrowLeft, FileImage, FileText } from 'lucide-react';
+import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText } from 'lucide-react';
 
 export default function ChartEditorPage() {
   const router       = useRouter();
@@ -135,6 +136,9 @@ export default function ChartEditorPage() {
               {state.options.chartTitle && (
                 <h2 className={styles.chartTitle}>{state.options.chartTitle}</h2>
               )}
+
+              {/* KPI 카드 */}
+              <KPIBar />
 
               {/* 그래프 */}
               <div ref={chartRef} className={styles.chartWrapper}>

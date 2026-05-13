@@ -341,7 +341,7 @@ export default function UploadPage() {
                 </button>
               </div>
             </div>
-            <SmartAxisMapper headers={state.headers} />
+            <SmartAxisMapper headers={state.headers} onDone={() => setStep('transform')} />
           </div>
         )}
 

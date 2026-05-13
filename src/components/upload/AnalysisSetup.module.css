@@ -1,0 +1,103 @@
+.root { display: flex; flex-direction: column; gap: 24px; }
+
+/* 배너 */
+.banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.06));
+  border: 1px solid rgba(0,212,255,0.18);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+}
+.banner strong { color: var(--text-primary); }
+.yoyTag { color: var(--accent-green); font-weight: 700; }
+.noSchema { font-size: 0.875rem; color: var(--accent-orange); padding: 12px 0; }
+
+/* 섹션 */
+.section { display: flex; flex-direction: column; gap: 12px; }
+.sectionTitle { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+.sectionDesc { font-size: 0.83rem; color: var(--text-muted); }
+
+/* 기간 행 */
+.periodList { display: flex; flex-direction: column; gap: 8px; }
+.periodRow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+.periodId {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(0,212,255,0.15);
+  color: var(--accent-aqua);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 800; flex-shrink: 0;
+}
+.labelInput {
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); font-family: inherit; font-size: 0.85rem;
+  width: 130px; min-width: 0;
+}
+.labelInput:focus { outline: none; border-color: var(--border-focus); }
+.select {
+  padding: 6px 8px; border-radius: var(--radius-sm);
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); font-family: inherit; font-size: 0.83rem;
+  cursor: pointer;
+}
+.dash { color: var(--text-muted); font-size: 0.85rem; }
+.monthCount { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+.removeBtn {
+  margin-left: auto; padding: 5px; border-radius: var(--radius-sm);
+  background: none; border: 1px solid transparent;
+  color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast);
+}
+.removeBtn:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+.addBtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  border: 1px dashed var(--border-card);
+  background: none; color: var(--text-muted);
+  font-size: 0.85rem; cursor: pointer; font-family: inherit;
+  transition: all var(--transition-fast); align-self: flex-start;
+}
+.addBtn:hover { border-color: var(--accent-aqua); color: var(--accent-aqua); }
+
+/* YoY */
+.yoyRows { display: flex; flex-direction: column; gap: 8px; }
+.yoyRow {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.875rem; color: var(--text-secondary); cursor: pointer;
+}
+.yoyRow input[type="checkbox"] { accent-color: var(--accent-aqua); width: 15px; height: 15px; }
+.yoyRow strong { color: var(--text-primary); }
+
+/* 집계 방식 pills */
+.pills { display: flex; gap: 8px; }
+.pill {
+  padding: 8px 18px; border-radius: 100px;
+  border: 1.5px solid var(--border-card); background: var(--bg-card);
+  color: var(--text-muted); font-family: inherit; font-size: 0.875rem;
+  cursor: pointer; transition: all var(--transition-fast);
+}
+.pill:hover { border-color: var(--border-focus); color: var(--text-primary); }
+.pillOn {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.09) !important;
+  color: var(--accent-aqua) !important; font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  display: flex; align-items: center; gap: 12px;
+  padding-top: 8px; border-top: 1px solid var(--border-subtle);
+}
+.appliedMsg {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; color: var(--accent-green);
+}

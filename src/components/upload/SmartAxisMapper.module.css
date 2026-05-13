@@ -1,4 +1,4 @@
-.root { display: flex; flex-direction: column; gap: 20px; }
+.root { display: flex; flex-direction: column; gap: 28px; }
 
 /* AI 배너 */
 .banner {
@@ -14,192 +14,141 @@
   line-height: 1.5;
 }
 
-/* 질문 */
-.question { display: flex; flex-direction: column; gap: 6px; }
-.qTitle {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-.qDesc { font-size: 0.875rem; color: var(--text-muted); }
-.qDesc strong { color: var(--accent-aqua); }
-
-/* 의도 카드 그리드 */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+/* 섹션 */
+.section {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 20px 18px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  font-family: inherit;
-  text-align: left;
-  position: relative;
-}
-.card:hover {
-  border-color: var(--border-focus);
-  background: var(--bg-card-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-}
-.cardSelected {
-  border-color: var(--accent-aqua) !important;
-  background: rgba(0,212,255,0.07) !important;
-  box-shadow: 0 0 20px rgba(0,212,255,0.1) !important;
-}
-
-.cardTop {
+.sectionLabel {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
-.cardIcon { font-size: 1.6rem; }
-.cardCheck { color: var(--accent-aqua); }
 
-.cardTitle {
-  font-size: 1rem;
+.axisTag {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(0,212,255,0.12);
+  color: var(--accent-aqua);
+  border: 1px solid rgba(0,212,255,0.2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sectionLabel h3 {
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
 }
-.cardSelected .cardTitle { color: var(--accent-aqua); }
 
-.cardDesc {
-  font-size: 0.82rem;
+/* 알약(pill) 버튼 행 */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.pill:hover {
+  border-color: var(--border-focus);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* X축 선택됨 (aqua) */
+.pillSelected {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.1) !important;
+  color: var(--accent-aqua) !important;
+  box-shadow: 0 0 16px rgba(0,212,255,0.12);
+}
+
+/* Y축 선택됨 (green) */
+.pillSelectedGreen {
+  border-color: #10b981 !important;
+  background: rgba(16,185,129,0.1) !important;
+  color: #10b981 !important;
+  box-shadow: 0 0 16px rgba(16,185,129,0.12);
+}
+
+.pillLabel { font-size: 0.95rem; }
+
+/* 선택 힌트 */
+.optHint {
+  font-size: 0.83rem;
   color: var(--text-muted);
+  padding-left: 4px;
   line-height: 1.5;
 }
 
-.cardPreview {
-  margin-top: 4px;
-  padding: 8px 10px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  font-size: 0.78rem;
-  color: var(--accent-green);
-  line-height: 1.4;
-  border: 1px solid var(--border-subtle);
-}
-
-.pivotBadge {
-  display: inline-block;
-  padding: 2px 8px;
-  background: rgba(124,58,237,0.15);
-  border: 1px solid rgba(124,58,237,0.3);
-  border-radius: 100px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #a78bfa;
-  align-self: flex-start;
-}
-
-/* 선택 결과 */
-.result {
+/* 적용 미리보기 행 */
+.applyRow {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 16px 20px;
-  background: rgba(16,185,129,0.07);
-  border: 1px solid rgba(16,185,129,0.25);
+  background: rgba(0,212,255,0.05);
+  border: 1px solid rgba(0,212,255,0.2);
   border-radius: var(--radius-md);
 }
-.resultInner {
+
+.applyPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.applyPreview strong { color: var(--text-primary); }
+
+/* 적용 완료 배너 */
+.appliedBanner {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-.resultText {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
+  padding: 14px 20px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
-  color: var(--text-primary);
-  font-weight: 700;
+  color: var(--text-secondary);
 }
-.resultAxes {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-.resultAxes em { color: var(--accent-aqua); font-style: normal; font-weight: 600; }
+.appliedBanner strong { color: var(--text-primary); }
 
 .resetBtn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  margin-left: auto;
+  padding: 5px 14px;
   border-radius: 100px;
   border: 1px solid var(--border-subtle);
   background: none;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   cursor: pointer;
   font-family: inherit;
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
 .resetBtn:hover { border-color: var(--border-focus); color: var(--text-primary); }
-
-/* 세부 선택 (Y축 기간 선택) */
-.refine { display: flex; flex-direction: column; gap: 10px; }
-.refineLabel { font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; }
-.refineRow { display: flex; flex-wrap: wrap; gap: 8px; }
-.refineBtn {
-  padding: 5px 14px;
-  border-radius: 100px;
-  border: 1px solid var(--border-card);
-  background: var(--bg-secondary);
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all var(--transition-fast);
-}
-.refineBtn:hover { border-color: var(--border-focus); color: var(--text-primary); }
-.refineSel {
-  border-color: var(--accent-aqua);
-  background: rgba(0,212,255,0.1);
-  color: var(--accent-aqua);
-  font-weight: 700;
-}
-
-/* 직접 설정 */
-.manualWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-}
-.manualHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-/* hint */
-.hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: 1px dashed var(--border-card);
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}

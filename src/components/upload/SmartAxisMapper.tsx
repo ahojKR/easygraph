@@ -3,165 +3,253 @@
 import { useState, useMemo } from 'react';
 import { ColumnDef } from '@/context/ChartContext';
 import { useChart } from '@/context/ChartContext';
-import { profileData, AxisIntent, pivotWideToLong } from '@/lib/dataDetect';
-import ColumnMapper from './ColumnMapper';
+import { profileData, pivotWideToLong } from '@/lib/dataDetect';
+import { applyTransform } from '@/lib/transform';
 import styles from './SmartAxisMapper.module.css';
-import { Sparkles, ChevronRight, CheckCircle2, RotateCcw } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface Props { headers: ColumnDef[]; }
 
+/* ── X축 선택지 ─────────────────────────────── */
+const X_OPTIONS = [
+  { id: 'monthly',   icon: '📅', label: '월별',    desc: '1월 ~ 12월 단위로 봅니다' },
+  { id: 'quarterly', icon: '🗓️', label: '분기별',  desc: 'Q1·Q2·Q3·Q4 단위로 집계합니다' },
+  { id: 'half',      icon: '📆', label: '반기별',   desc: '상반기·하반기로 집계합니다' },
+  { id: 'yearly',    icon: '🗃️', label: '연도별',  desc: '연간 합계로 묶습니다' },
+  { id: 'item',      icon: '🏷️', label: '항목/분류', desc: '회사·제품·국가 등 카테고리로 비교합니다' },
+] as const;
+type XOptionId = typeof X_OPTIONS[number]['id'];
+
+/* ── Y축 선택지 ─────────────────────────────── */
+const Y_OPTIONS = [
+  { id: 'value',      icon: '🔢', label: '수치',    desc: '입력된 숫자 그대로 표시합니다' },
+  { id: 'percent',    icon: '🥧', label: '비중 (%)', desc: '전체 합계 대비 각 항목의 점유율 (%)' },
+  { id: 'cumulative', icon: '📈', label: '누적 합계', desc: '시간 흐름에 따른 수치 누적 추이' },
+  { id: 'rank',       icon: '🏆', label: '순위',    desc: '수치 크기 순으로 1위·2위… 표시' },
+] as const;
+type YOptionId = typeof Y_OPTIONS[number]['id'];
+
 export default function SmartAxisMapper({ headers }: Props) {
   const { state, dispatch } = useChart();
-  const [selected, setSelected] = useState<string | null>(null);
-  const [showManual, setShowManual] = useState(false);
+  const [xSel, setXSel] = useState<XOptionId | null>(null);
+  const [ySel, setYSel] = useState<YOptionId | null>(null);
+  const [applied, setApplied] = useState(false);
 
-  const profile = useMemo(
-    () => profileData(state.rawData, headers),
-    [state.rawData, headers]
-  );
+  const profile = useMemo(() => profileData(state.rawData, headers), [state.rawData, headers]);
 
-  const applyIntent = (intent: AxisIntent) => {
-    if (intent.id === 'manual') {
-      setShowManual(true);
-      setSelected('manual');
-      return;
+  /* ── 선택 적용 ─────────────────────────────── */
+  const apply = () => {
+    if (!xSel || !ySel) return;
+
+    const catCols  = profile.categoryColumns;
+    const numCols  = profile.numericColumns;
+    const isWide   = profile.format === 'wide';
+
+    /* 1. X축 데이터 준비 */
+    let baseData = state.rawData;
+    let xAxisCol = catCols[0]?.name ?? numCols[0]?.name ?? '';
+    let yAxesCols = numCols.map(c => c.name);
+
+    if (isWide && xSel !== 'item') {
+      // 가로형 데이터 → 피벗(열이 기간)
+      const keyColumns = catCols.slice(0, 2).map(c => c.name);
+      const pivoted = pivotWideToLong(state.rawData, keyColumns, numCols.map(c => c.name), '기간');
+      baseData = pivoted;
+      xAxisCol = '기간';
+      yAxesCols = Object.keys(pivoted[0] ?? {}).filter(k => k !== '기간');
+    } else if (xSel === 'item') {
+      xAxisCol  = catCols[0]?.name ?? '';
+      yAxesCols = [numCols[0]?.name ?? ''];
     }
-    setShowManual(false);
-    setSelected(intent.id);
 
-    if (intent.requiresPivot && intent.pivotConfig) {
-      const { keyColumns, valueColumns, xLabel } = intent.pivotConfig;
-      const pivoted = pivotWideToLong(state.rawData, keyColumns, valueColumns, xLabel);
-      const seriesNames = Object.keys(pivoted[0] ?? {}).filter(k => k !== xLabel);
-      dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: pivoted, transformType: 'none' } });
-      dispatch({ type: 'SET_X_AXIS',  payload: xLabel });
-      dispatch({ type: 'SET_Y_AXES',  payload: seriesNames });
-      dispatch({ type: 'SET_CHART_TYPE', payload: intent.chartType });
-    } else {
-      dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: state.rawData, transformType: 'none' } });
-      dispatch({ type: 'SET_X_AXIS',  payload: intent.xAxis });
-      dispatch({ type: 'SET_Y_AXES',  payload: intent.yAxes.filter(Boolean) });
-      dispatch({ type: 'SET_CHART_TYPE', payload: intent.chartType });
+    /* 2. 기간 집계 (분기/반기) — 피벗 후 또는 long 데이터 */
+    let displayData = baseData;
+    if (xSel === 'quarterly') {
+      displayData = aggregatePeriod(baseData, xAxisCol, yAxesCols, 'quarter');
+      xAxisCol = '분기';
+    } else if (xSel === 'half') {
+      displayData = aggregatePeriod(baseData, xAxisCol, yAxesCols, 'half');
+      xAxisCol = '반기';
+    } else if (xSel === 'yearly') {
+      displayData = aggregatePeriod(baseData, xAxisCol, yAxesCols, 'year');
+      xAxisCol = '연도';
     }
+
+    /* 3. Y축 변환 */
+    const yTransformMap: Record<YOptionId, Parameters<typeof applyTransform>[2]> = {
+      value:      'none',
+      percent:    'col-pct',
+      cumulative: 'cumulative',
+      rank:       'rank',
+    };
+    const transformType = yTransformMap[ySel];
+    const finalData = applyTransform(displayData, yAxesCols, transformType, xAxisCol);
+
+    /* 4. 차트 유형 추천 */
+    const chartTypeMap: Record<XOptionId, 'bar' | 'line' | 'area' | 'stacked-bar'> = {
+      monthly:   ySel === 'cumulative' ? 'area' : 'line',
+      quarterly: 'bar',
+      half:      'bar',
+      yearly:    'bar',
+      item:      ySel === 'percent' ? 'stacked-bar' : 'bar',
+    };
+
+    /* 5. Context 업데이트 */
+    dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: finalData, transformType } });
+    dispatch({ type: 'SET_X_AXIS',  payload: xAxisCol });
+    dispatch({ type: 'SET_Y_AXES',  payload: yAxesCols });
+    dispatch({ type: 'SET_CHART_TYPE', payload: chartTypeMap[xSel] });
+    setApplied(true);
   };
 
   const reset = () => {
-    setSelected(null);
-    setShowManual(false);
+    setXSel(null); setYSel(null); setApplied(false);
     dispatch({ type: 'SET_X_AXIS', payload: '' });
     dispatch({ type: 'SET_Y_AXES', payload: [] });
     dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: state.rawData, transformType: 'none' } });
   };
 
-  const activeIntent = profile.intents.find(i => i.id === selected);
+  const canApply = !!xSel && !!ySel;
 
   return (
     <div className={styles.root}>
-      {/* AI 분석 배너 */}
+      {/* AI 배너 */}
       <div className={styles.banner}>
-        <Sparkles size={16} color="var(--accent-aqua)" />
+        <span>✨</span>
         <p>{profile.description}</p>
       </div>
 
-      {/* 질문 */}
-      <div className={styles.question}>
-        <h2 className={styles.qTitle}>무엇을 표현하고 싶으세요?</h2>
-        <p className={styles.qDesc}>표시할 내용의 <strong>의도</strong>를 선택하면 자동으로 X축·Y축을 설정합니다</p>
+      {/* ── X축 선택 ── */}
+      <div className={styles.section}>
+        <div className={styles.sectionLabel}>
+          <span className={styles.axisTag}>가로축</span>
+          <h3>가로축에 무엇을 표시할까요?</h3>
+        </div>
+        <div className={styles.pills}>
+          {X_OPTIONS.map(opt => (
+            <button
+              key={opt.id}
+              id={`x-${opt.id}`}
+              className={`${styles.pill} ${xSel === opt.id ? styles.pillSelected : ''}`}
+              onClick={() => { setXSel(opt.id); setApplied(false); }}
+            >
+              <span>{opt.icon}</span>
+              <span className={styles.pillLabel}>{opt.label}</span>
+              {xSel === opt.id && <CheckCircle2 size={13} />}
+            </button>
+          ))}
+        </div>
+        {xSel && (
+          <p className={styles.optHint}>
+            {X_OPTIONS.find(o => o.id === xSel)?.desc}
+          </p>
+        )}
       </div>
 
-      {/* 의도 카드 */}
-      <div className={styles.cards}>
-        {profile.intents.map(intent => (
-          <button
-            key={intent.id}
-            id={`intent-${intent.id}`}
-            className={`${styles.card} ${selected === intent.id ? styles.cardSelected : ''}`}
-            onClick={() => applyIntent(intent)}
-          >
-            <div className={styles.cardTop}>
-              <span className={styles.cardIcon}>{intent.icon}</span>
-              {selected === intent.id && (
-                <CheckCircle2 size={16} className={styles.cardCheck} />
-              )}
-            </div>
-            <h3 className={styles.cardTitle}>{intent.title}</h3>
-            <p className={styles.cardDesc}>{intent.desc}</p>
-            <div className={styles.cardPreview}>
-              <span>→ {intent.preview}</span>
-            </div>
-            {intent.requiresPivot && (
-              <span className={styles.pivotBadge}>행·열 자동 전환</span>
-            )}
+      {/* ── Y축 선택 ── */}
+      <div className={styles.section}>
+        <div className={styles.sectionLabel}>
+          <span className={styles.axisTag} style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>세로축</span>
+          <h3>세로축에 무엇을 표시할까요?</h3>
+        </div>
+        <div className={styles.pills}>
+          {Y_OPTIONS.map(opt => (
+            <button
+              key={opt.id}
+              id={`y-${opt.id}`}
+              className={`${styles.pill} ${ySel === opt.id ? styles.pillSelectedGreen : ''}`}
+              onClick={() => { setYSel(opt.id); setApplied(false); }}
+            >
+              <span>{opt.icon}</span>
+              <span className={styles.pillLabel}>{opt.label}</span>
+              {ySel === opt.id && <CheckCircle2 size={13} />}
+            </button>
+          ))}
+        </div>
+        {ySel && (
+          <p className={styles.optHint}>
+            {Y_OPTIONS.find(o => o.id === ySel)?.desc}
+          </p>
+        )}
+      </div>
+
+      {/* ── 적용 버튼 / 결과 ── */}
+      {canApply && !applied && (
+        <div className={styles.applyRow}>
+          <div className={styles.applyPreview}>
+            <ChevronRight size={14} />
+            가로: <strong>{X_OPTIONS.find(o => o.id === xSel)?.label}</strong>
+            &nbsp;/&nbsp;
+            세로: <strong>{Y_OPTIONS.find(o => o.id === ySel)?.label}</strong>
+          </div>
+          <button id="apply-axis-btn" className="btn btn-primary" onClick={apply}>
+            이 설정으로 차트 보기 →
           </button>
-        ))}
-      </div>
-
-      {/* 선택 결과 */}
-      {selected && !showManual && activeIntent && (
-        <div className={styles.result}>
-          <div className={styles.resultInner}>
-            <CheckCircle2 size={16} color="var(--accent-green)" />
-            <div className={styles.resultText}>
-              <strong>{activeIntent.title}</strong> 선택됨
-              <span className={styles.resultAxes}>
-                X축: <em>{state.xAxis || activeIntent.xLabel}</em>
-                &nbsp;/&nbsp;
-                Y축: <em>{(state.yAxes.length ? state.yAxes : activeIntent.yAxes).slice(0, 3).join(', ')}{(state.yAxes.length > 3 ? '…' : '')}</em>
-              </span>
-            </div>
-            <button className={styles.resetBtn} onClick={reset} id="intent-reset-btn">
-              <RotateCcw size={13} /> 다시 선택
-            </button>
-          </div>
-
-          {/* X축 세부 선택: wide + item-compare 일 때 Y축 기간 선택 */}
-          {activeIntent.id === 'item-compare' && profile.numericColumns.length > 1 && (
-            <div className={styles.refine}>
-              <p className={styles.refineLabel}>어느 기간의 수치를 볼까요?</p>
-              <div className={styles.refineRow}>
-                {profile.numericColumns.map(col => (
-                  <button
-                    key={col.name}
-                    id={`ysel-${col.name}`}
-                    className={`${styles.refineBtn} ${state.yAxes.includes(col.name) ? styles.refineSel : ''}`}
-                    onClick={() => {
-                      const cur = state.yAxes;
-                      dispatch({
-                        type: 'SET_Y_AXES',
-                        payload: cur.includes(col.name)
-                          ? cur.filter(y => y !== col.name)
-                          : [...cur, col.name],
-                      });
-                    }}
-                  >
-                    {col.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* 직접 설정 폴백 */}
-      {showManual && (
-        <div className={styles.manualWrapper}>
-          <div className={styles.manualHeader}>
-            <span>⚙️ 직접 설정</span>
-            <button className={styles.resetBtn} onClick={reset} id="manual-reset-btn">
-              <RotateCcw size={13} /> 의도 다시 선택
-            </button>
-          </div>
-          <ColumnMapper headers={headers} />
-        </div>
-      )}
-
-      {/* 아직 미선택 */}
-      {!selected && (
-        <div className={styles.hint}>
-          <ChevronRight size={14} /> 위에서 원하는 시각화 방식을 선택해주세요
+      {applied && (
+        <div className={styles.appliedBanner}>
+          <CheckCircle2 size={16} color="var(--accent-green)" />
+          <span>
+            가로: <strong>{X_OPTIONS.find(o => o.id === xSel)?.label}</strong>
+            &nbsp;/&nbsp;
+            세로: <strong>{Y_OPTIONS.find(o => o.id === ySel)?.label}</strong>
+            &nbsp;— 설정 완료
+          </span>
+          <button className={styles.resetBtn} onClick={reset} id="axis-reset-btn">
+            다시 선택
+          </button>
         </div>
       )}
     </div>
   );
+}
+
+/* ── 기간 집계 유틸 ─────────────────────────── */
+import { Row } from '@/context/ChartContext';
+
+function getMonthNum(val: string): number | null {
+  const m = String(val).match(/(\d{1,2})월|[-/](\d{1,2})$|^(\d{1,2})$/);
+  if (!m) return null;
+  const n = parseInt(m[1] ?? m[2] ?? m[3] ?? '', 10);
+  return n >= 1 && n <= 12 ? n : null;
+}
+
+function aggregatePeriod(
+  data: Row[],
+  xCol: string,
+  yAxes: string[],
+  type: 'quarter' | 'half' | 'year'
+): Row[] {
+  const buckets: Record<string, Record<string, number>> = {};
+  const order: string[] = [];
+
+  data.forEach(row => {
+    const raw = String(row[xCol] ?? '');
+    let label = raw;
+
+    if (type === 'quarter') {
+      const m = getMonthNum(raw);
+      label = m ? `Q${Math.ceil(m / 3)}` : raw;
+    } else if (type === 'half') {
+      const m = getMonthNum(raw);
+      label = m ? (m <= 6 ? '상반기' : '하반기') : raw;
+    } else if (type === 'year') {
+      const y = raw.match(/\d{4}/)?.[0];
+      label = y ?? raw;
+    }
+
+    if (!buckets[label]) { buckets[label] = {}; order.push(label); }
+    yAxes.forEach(y => {
+      buckets[label][y] = (buckets[label][y] ?? 0) + (Number(row[y]) || 0);
+    });
+  });
+
+  const newXLabel = type === 'quarter' ? '분기' : type === 'half' ? '반기' : '연도';
+  return order.map(label => {
+    const r: Row = { [newXLabel]: label };
+    yAxes.forEach(y => { r[y] = Math.round((buckets[label][y] ?? 0) * 10) / 10; });
+    return r;
+  });
 }

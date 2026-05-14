@@ -7,8 +7,10 @@ import {
   PeriodDef, aggregateByPeriod, toChartData, buildKPIs
 } from '@/lib/periodEngine';
 import { generateInsights } from '@/lib/insightEngine';
+import { saveTemplate, AnalysisTemplate } from '@/lib/templateStore';
+import TemplatePicker from './TemplatePicker';
 import styles from './AnalysisSetup.module.css';
-import { Plus, Trash2, ChevronRight, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, CheckCircle2, BarChart3, Bookmark } from 'lucide-react';
 
 const MONTH_NAMES = ['1월','2월','3월','4월','5월','6월',
                      '7월','8월','9월','10월','11월','12월'];
@@ -50,6 +52,8 @@ export default function AnalysisSetup({ onDone }: Props) {
   const [useAvg, setUseAvg] = useState(true);
   const [yoyPairs, setYoyPairs] = useState<[string,string][]>([]);
   const [applied, setApplied] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
 
   const years = schema.col.years;
 
@@ -121,10 +125,33 @@ export default function AnalysisSetup({ onDone }: Props) {
     setApplied(true);
   }, [schema, periods, state.rawData, useAvg, yoyPairs, dispatch]);
 
+  const applyTemplate = (tpl: AnalysisTemplate) => {
+    setPeriods(tpl.periods);
+    setYoyPairs(tpl.yoyPairs);
+    setUseAvg(tpl.useAvg);
+    setApplied(false);
+    dispatch({ type: 'SET_CHART_TYPE', payload: tpl.chartType });
+    dispatch({ type: 'UPDATE_OPTIONS', payload: { colorScheme: tpl.colorScheme } });
+  };
+
+  const handleSaveTemplate = () => {
+    if (!saveName.trim()) return;
+    saveTemplate(saveName.trim(), {
+      periods, yoyPairs, useAvg,
+      chartType: 'stacked-bar',
+      transformType: 'none',
+      colorScheme: state.options.colorScheme,
+    });
+    setSaveName('');
+    setShowSaveInput(false);
+  };
+
   const hasSchema = schema.isHierarchical || schema.row.subsidiaryCol;
 
   return (
     <div className={styles.root}>
+      {/* 템플릿 피커 */}
+      <TemplatePicker onApply={applyTemplate} />
       {/* 스키마 감지 결과 */}
       <div className={styles.banner}>
         <BarChart3 size={16} color="var(--accent-aqua)" />
@@ -262,6 +289,35 @@ export default function AnalysisSetup({ onDone }: Props) {
         </div>
       </section>
 
+      {/* 템플릿 저장 입력 */}
+      {showSaveInput && (
+        <div className={styles.saveRow}>
+          <input
+            id="template-name-input"
+            className={styles.labelInput}
+            placeholder="템플릿 이름 (예: 월→반기 YoY 리포트)"
+            value={saveName}
+            onChange={e => setSaveName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSaveTemplate()}
+            autoFocus
+          />
+          <button
+            id="save-template-confirm"
+            className="btn btn-secondary"
+            onClick={handleSaveTemplate}
+            disabled={!saveName.trim()}
+          >
+            <Bookmark size={13} /> 저장
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowSaveInput(false)}
+          >
+            취소
+          </button>
+        </div>
+      )}
+
       {/* 적용 버튼 */}
       <div className={styles.footer}>
         {applied && (
@@ -270,6 +326,14 @@ export default function AnalysisSetup({ onDone }: Props) {
           </span>
         )}
         <div style={{ flex: 1 }} />
+        <button
+          id="save-template-btn"
+          className="btn btn-ghost btn-sm"
+          onClick={() => setShowSaveInput(v => !v)}
+          title="현재 설정을 템플릿으로 저장"
+        >
+          <Bookmark size={13} /> 템플릿 저장
+        </button>
         <button
           id="apply-analysis-btn"
           className="btn btn-secondary"

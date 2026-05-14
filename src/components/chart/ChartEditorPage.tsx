@@ -13,7 +13,7 @@ import InsightPanel from './InsightPanel';
 import DataTable from './DataTable';
 import KPIBar from './KPIBar';
 import styles from './ChartEditorPage.module.css';
-import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText, Presentation } from 'lucide-react';
+import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText, Presentation, Copy } from 'lucide-react';
 
 export default function ChartEditorPage() {
   const router       = useRouter();
@@ -139,6 +139,37 @@ export default function ChartEditorPage() {
               id="export-ppt-btn"
             >
               <Presentation size={14} /> PPT
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              id="copy-chart-btn"
+              onClick={async () => {
+                if (!chartRef.current) return;
+                try {
+                  const { default: html2canvas } = await import('html2canvas');
+                  const canvas = await html2canvas(chartRef.current, {
+                    backgroundColor: '#0f1628', scale: 2,
+                  });
+                  canvas.toBlob(async (blob) => {
+                    if (!blob) return;
+                    await navigator.clipboard.write([
+                      new ClipboardItem({ 'image/png': blob }),
+                    ]);
+                    // 간단한 피드백 (버튼 텍스트 변경)
+                    const btn = document.getElementById('copy-chart-btn');
+                    if (btn) {
+                      const orig = btn.innerHTML;
+                      btn.innerHTML = '✅ 복사됨';
+                      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+                    }
+                  });
+                } catch (_) {
+                  alert('클립보드 복사는 HTTPS 환경에서만 지원됩니다.');
+                }
+              }}
+              title="차트를 이미지로 클립보드 복사"
+            >
+              <Copy size={14} /> 복사
             </button>
           </div>
         </div>

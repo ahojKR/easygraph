@@ -1,8 +1,40 @@
 .wrapper {
+  display: flex; flex-direction: column; gap: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+/* 자동 감지 배너 */
+.detectionBanner {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(124,58,237,0.04));
+  border-bottom: 1px solid rgba(0,212,255,0.12);
+}
+.bannerTitle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.83rem; font-weight: 800;
+  color: var(--text-primary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.detectionGrid {
+  display: flex; flex-wrap: wrap; gap: 10px 24px;
+}
+.detectionItem {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.83rem;
+}
+.detectLabel { color: var(--text-muted); font-weight: 600; }
+.detectValue  { color: var(--text-secondary); }
+.detectOk   { color: var(--accent-green) !important; font-weight: 700; }
+.detectWarn { color: var(--accent-orange) !important; }
+
+.issueList { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.issueItem {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.8rem; color: var(--accent-orange);
 }
 .meta {
   display: flex;

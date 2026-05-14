@@ -77,31 +77,30 @@
   font-family: monospace;
 }
 
-/* 미리보기 테이블 */
-.previewSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Before / After 비교 */
+.compareSection { display: flex; flex-direction: column; gap: 10px; }
+.compareHeader {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);
 }
-.previewHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-secondary);
+.compareGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .compareGrid { grid-template-columns: 1fr; } }
+
+.comparePane { display: flex; flex-direction: column; gap: 8px; }
+.comparePaneTitle { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.04em; }
+
+.compareMeta {
+  font-size: 0.8rem; color: var(--text-muted);
+  text-align: right; padding-top: 4px;
 }
-.previewMeta { margin-left: auto; font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
 
 .tableScroll { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-card); }
 .table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .table th {
   padding: 9px 12px;
   background: var(--bg-secondary);
-  color: var(--text-muted);
-  font-weight: 700;
-  text-align: left;
-  white-space: nowrap;
+  color: var(--text-muted); font-weight: 700;
+  text-align: left; white-space: nowrap;
   border-bottom: 1px solid var(--border-subtle);
 }
 .table td {
@@ -113,6 +112,8 @@
 .table tr:last-child td { border-bottom: none; }
 .table tr:hover td { background: rgba(0,212,255,0.03); }
 .null { color: var(--text-muted); font-style: italic; }
+.cellEmpty  { color: var(--accent-orange); background: rgba(245,158,11,0.06) !important; }
+.cellFilled { color: var(--accent-green); }
 
 /* 푸터 */
 .footer {

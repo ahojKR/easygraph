@@ -64,9 +64,9 @@ export default function DataRepair({ onDone }: Props) {
       <div className={styles.clean}>
         <CheckCircle2 size={32} color="var(--accent-green)" />
         <h2>데이터 품질이 양호합니다 ✅</h2>
-        <p>감지된 결측값 또는 구조 문제가 없습니다. 바로 축 설정으로 이동할 수 있습니다.</p>
+        <p>감지된 결측값 또는 구조 문제가 없습니다.</p>
         <button className="btn btn-primary" onClick={onDone} id="repair-skip-btn">
-          축 설정으로 이동 →
+          분석 설정으로 이동 →
         </button>
       </div>
     );
@@ -134,40 +134,65 @@ export default function DataRepair({ onDone }: Props) {
         ))}
       </div>
 
-      {/* 수정 후 테이블 미리보기 */}
-      <div className={styles.previewSection}>
-        <div className={styles.previewHeader}>
+      {/* Before / After 나란히 비교 */}
+      <div className={styles.compareSection}>
+        <div className={styles.compareHeader}>
           <Table2 size={16} color="var(--accent-aqua)" />
-          <span>수정 후 테이블 미리보기</span>
-          <span className={styles.previewMeta}>
-            {repaired.data.length}행 × {repaired.headers.length}열
-          </span>
+          <span>Before / After 비교</span>
         </div>
-        <div className={styles.tableScroll}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                {repaired.headers.slice(0, 8).map(h => (
-                  <th key={h.name}>{h.name}</th>
-                ))}
-                {repaired.headers.length > 8 && <th>...</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {repaired.data.slice(0, 6).map((row, i) => (
-                <tr key={i}>
-                  {repaired.headers.slice(0, 8).map(h => (
-                    <td key={h.name}>
-                      {row[h.name] !== null && row[h.name] !== undefined
-                        ? String(row[h.name])
-                        : <span className={styles.null}>-</span>}
-                    </td>
+        <div className={styles.compareGrid}>
+          {/* BEFORE */}
+          <div className={styles.comparePane}>
+            <div className={styles.comparePaneTitle} style={{ color: 'var(--accent-orange)' }}>Before (원본)</div>
+            <div className={styles.tableScroll}>
+              <table className={styles.table}>
+                <thead><tr>
+                  {headers.slice(0, 7).map(h => <th key={h.name}>{h.name}</th>)}
+                  {headers.length > 7 && <th>…</th>}
+                </tr></thead>
+                <tbody>
+                  {rawData.slice(0, 6).map((row, i) => (
+                    <tr key={i}>
+                      {headers.slice(0, 7).map(h => {
+                        const val = row[h.name];
+                        const empty = val === null || val === undefined || val === '';
+                        return <td key={h.name} className={empty ? styles.cellEmpty : ''}>{empty ? '—' : String(val)}</td>;
+                      })}
+                      {headers.length > 7 && <td>…</td>}
+                    </tr>
                   ))}
-                  {repaired.headers.length > 8 && <td>…</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {/* AFTER */}
+          <div className={styles.comparePane}>
+            <div className={styles.comparePaneTitle} style={{ color: 'var(--accent-green)' }}>After (수정 후)</div>
+            <div className={styles.tableScroll}>
+              <table className={styles.table}>
+                <thead><tr>
+                  {repaired.headers.slice(0, 7).map(h => <th key={h.name}>{h.name}</th>)}
+                  {repaired.headers.length > 7 && <th>…</th>}
+                </tr></thead>
+                <tbody>
+                  {repaired.data.slice(0, 6).map((row, i) => (
+                    <tr key={i}>
+                      {repaired.headers.slice(0, 7).map(h => {
+                        const val = row[h.name];
+                        const empty = val === null || val === undefined || val === '';
+                        return <td key={h.name} className={empty ? styles.cellEmpty : styles.cellFilled}>{empty ? '—' : String(val)}</td>;
+                      })}
+                      {repaired.headers.length > 7 && <td>…</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div className={styles.compareMeta}>
+          원본: {rawData.length}행 × {headers.length}열 &nbsp;→&nbsp;
+          수정 후: {repaired.data.length}행 × {repaired.headers.length}열
         </div>
       </div>
 
@@ -192,7 +217,7 @@ export default function DataRepair({ onDone }: Props) {
           className="btn btn-primary"
           onClick={handleDone}
         >
-          테이블 완성 → 축 설정
+          분석 설정으로 →
         </button>
       </div>
     </div>

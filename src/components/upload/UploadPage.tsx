@@ -2,46 +2,71 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle, X, ArrowRight, BarChart2, ClipboardPaste } from 'lucide-react';
+import {
+  Upload, FileSpreadsheet, AlertTriangle, CheckCircle,
+  X, ArrowRight, BarChart2, ClipboardPaste,
+} from 'lucide-react';
 import { parseFile, parsePastedText, ParseResult } from '@/lib/parser';
 import { useChart } from '@/context/ChartContext';
-import SmartAxisMapper from './SmartAxisMapper';
-import DataPreview from './DataPreview';
-import DataRepair from './DataRepair';
-import ChartGallery from './ChartGallery';
-import AnalysisConfig from './AnalysisConfig';
-import DataTransform from './DataTransform';
+import DataPreview    from './DataPreview';
+import DataRepair     from './DataRepair';
+import AnalysisIntent from './AnalysisIntent';
+import ChartBuilder   from './ChartBuilder';
 import styles from './UploadPage.module.css';
 
-type Step = 'upload' | 'preview' | 'repair' | 'gallery' | 'map' | 'transform' | 'config';
+// ── 7단계 플로우 ────────────────────────────────────────
+// 1. upload  → 2. preview → 3. repair → 4. intent → 5. builder → /chart
+type Step = 'upload' | 'preview' | 'repair' | 'intent' | 'builder';
 
 const STEP_LABELS: Record<Step, string> = {
-  upload:    '파일 업로드',
-  preview:   '데이터 확인',
-  repair:    '데이터 정제',
-  gallery:   '차트 선택',
-  map:       '직접 설정',
-  transform: '데이터 변환',
-  config:    '그래프 설정',
+  upload:  '① 데이터 입력',
+  preview: '② 데이터 확인',
+  repair:  '③ 데이터 정제',
+  intent:  '④ 분석 설정',
+  builder: '⑤ 차트 빌더',
 };
 
-const STEP_ORDER: Step[] = ['upload', 'preview', 'repair', 'gallery', 'transform', 'config'];
+const STEP_ORDER: Step[] = ['upload', 'preview', 'repair', 'intent', 'builder'];
+
+// ── 샘플 데이터 (APAC LG 형식) ─────────────────────────
+const SAMPLE_SUBSIDIARIES = ['LGEIN','LGEPH','LGECB','LGEVH'];
+const SAMPLE_CATS = ['HS','ES','MS'];
+
+function makeSample() {
+  const rows: Record<string, string | number>[] = [];
+  const yr = 2025;
+  SAMPLE_SUBSIDIARIES.forEach(sub => {
+    SAMPLE_CATS.forEach(cat => {
+      const base = { HS:120, ES:80, MS:50 }[cat] ?? 60;
+      const row: Record<string, string | number> = {
+        연도: yr, Subsidiary: sub, Category: cat,
+      };
+      for (let m = 1; m <= 7; m++) {
+        row[`${yr-2000}년 ${m}월`] = Math.round(base * (0.85 + Math.random() * 0.4));
+      }
+      rows.push(row);
+    });
+  });
+  return rows;
+}
 
 export default function UploadPage() {
   const router = useRouter();
   const { state, dispatch } = useChart();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<Step>('upload');
-  const [dragActive, setDragActive] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<ParseResult | null>(null);
-  const [fileName, setFileName] = useState('');
-  const [error, setError] = useState('');
-  const [uploadTab, setUploadTab] = useState<'file' | 'paste'>('file');
-  const [pasteText, setPasteText] = useState('');
+
+  const [step,           setStep]           = useState<Step>('upload');
+  const [dragActive,     setDragActive]     = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [progress,       setProgress]       = useState(0);
+  const [result,         setResult]         = useState<ParseResult | null>(null);
+  const [fileName,       setFileName]       = useState('');
+  const [error,          setError]          = useState('');
+  const [uploadTab,      setUploadTab]      = useState<'file' | 'paste'>('file');
+  const [pasteText,      setPasteText]      = useState('');
   const [pasteProcessing, setPasteProcessing] = useState(false);
 
+  // ── 파일 처리 ──────────────────────────────────────────
   const processFile = useCallback(async (file: File) => {
     const allowed = ['.xlsx', '.xls', '.csv'];
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -53,10 +78,7 @@ export default function UploadPage() {
       setError('파일 크기는 50MB 이하여야 합니다.');
       return;
     }
-    setError('');
-    setLoading(true);
-    setProgress(10);
-    setFileName(file.name);
+    setError(''); setLoading(true); setProgress(10); setFileName(file.name);
     try {
       setProgress(40);
       const parsed = await parseFile(file);
@@ -67,14 +89,12 @@ export default function UploadPage() {
       setTimeout(() => { setLoading(false); setStep('preview'); }, 400);
     } catch {
       setError('파일 파싱 중 오류가 발생했습니다. 파일을 확인해주세요.');
-      setLoading(false);
-      setProgress(0);
+      setLoading(false); setProgress(0);
     }
   }, [dispatch]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
+    e.preventDefault(); setDragActive(false);
     const file = e.dataTransfer.files[0];
     if (file) processFile(file);
   }, [processFile]);
@@ -84,58 +104,43 @@ export default function UploadPage() {
     if (file) processFile(file);
   };
 
-  const loadSample = () => {
-    const sampleData = Array.from({ length: 12 }, (_, i) => ({
-      '월': `${i + 1}월`,
-      '매출': Math.floor(3000 + Math.random() * 5000),
-      '비용': Math.floor(2000 + Math.random() * 3000),
-      '고객수': Math.floor(100 + Math.random() * 400),
-    }));
-    const headers = [
-      { name: '월', type: 'date' as const, index: 0 },
-      { name: '매출', type: 'number' as const, index: 1 },
-      { name: '비용', type: 'number' as const, index: 2 },
-      { name: '고객수', type: 'number' as const, index: 3 },
-    ];
-    dispatch({ type: 'SET_DATA', payload: { data: sampleData, headers, fileName: '샘플데이터.xlsx' } });
-    dispatch({ type: 'SET_X_AXIS', payload: '월' });
-    dispatch({ type: 'SET_Y_AXES', payload: ['매출'] });
-    setResult({ data: sampleData, headers, sheetNames: ['Sheet1'], warnings: [] });
-    setFileName('샘플데이터.xlsx');
-    setStep('preview');
-  };
-
-  const isDone = (s: Step) => STEP_ORDER.indexOf(step) > STEP_ORDER.indexOf(s);
-  const isActive = (s: Step) => step === s;
-
-  // Check if axes are selected before allowing transform step
-  const canGoTransform = !!state.xAxis && state.yAxes.length > 0;
-
-  // Handle paste text parsing
+  // ── 붙여넣기 처리 ─────────────────────────────────────
   const handlePasteSubmit = () => {
     if (!pasteText.trim()) { setError('데이터를 붙여넣어 주세요.'); return; }
-    setPasteProcessing(true);
-    setError('');
+    setPasteProcessing(true); setError('');
     try {
       const parsed = parsePastedText(pasteText);
       if (!parsed.data.length) {
         setError('데이터를 파싱할 수 없습니다. 헤더와 데이터가 포함된 표 형식인지 확인해주세요.');
-        setPasteProcessing(false);
-        return;
+        setPasteProcessing(false); return;
       }
       dispatch({ type: 'SET_DATA', payload: { data: parsed.data, headers: parsed.headers, fileName: '붙여넣기 데이터' } });
-      setResult(parsed);
-      setFileName('붙여넣기 데이터');
-      setStep('preview');
+      setResult(parsed); setFileName('붙여넣기 데이터'); setStep('preview');
     } catch {
       setError('데이터 파싱 중 오류가 발생했습니다.');
     }
     setPasteProcessing(false);
   };
 
+  // ── 샘플 데이터 ───────────────────────────────────────
+  const loadSample = () => {
+    const sampleData = makeSample();
+    const headers = Object.keys(sampleData[0]).map((name, index) => ({
+      name, index,
+      type: (typeof sampleData[0][name] === 'number' ? 'number' : 'category') as 'number' | 'category',
+    }));
+    dispatch({ type: 'SET_DATA', payload: { data: sampleData as never, headers, fileName: 'APAC_Sample.xlsx' } });
+    setResult({ data: sampleData as never, headers, sheetNames: ['Sheet1'], warnings: [] });
+    setFileName('APAC_Sample.xlsx');
+    setStep('preview');
+  };
+
+  const isDone   = (s: Step) => STEP_ORDER.indexOf(step) > STEP_ORDER.indexOf(s);
+  const isActive = (s: Step) => step === s;
+
   return (
     <div className={styles.root}>
-      {/* Header */}
+      {/* ── HEADER + 진행 표시 ── */}
       <header className={styles.header}>
         <div className={`container ${styles.headerInner}`}>
           <button className={styles.logo} onClick={() => router.push('/')} id="upload-logo">
@@ -160,31 +165,33 @@ export default function UploadPage() {
 
       <main className={`container ${styles.main}`}>
 
-        {/* STEP 1: UPLOAD */}
+        {/* ───────────────────────────────────────────────
+            STEP 1: 데이터 입력
+        ─────────────────────────────────────────────── */}
         {step === 'upload' && (
           <div className={`${styles.uploadSection} animate-fadeIn`}>
-            <h1 className={styles.title}>데이터 입력</h1>
-            <p className={styles.subtitle}>파일 업로드 또는 Excel에서 복사한 데이터를 직접 붙여넣을 수 있습니다</p>
+            <div className={styles.uploadHero}>
+              <h1 className={styles.title}>데이터 입력</h1>
+              <p className={styles.subtitle}>
+                Excel / CSV 파일 업로드, 또는 셀 복사(Ctrl+C) 후 붙여넣기로 시작하세요
+              </p>
+            </div>
 
-            {/* Tabs */}
+            {/* 탭 */}
             <div className={styles.uploadTabs}>
-              <button
-                id="tab-file"
+              <button id="tab-file"
                 className={`${styles.uploadTab} ${uploadTab === 'file' ? styles.tabActive : ''}`}
-                onClick={() => { setUploadTab('file'); setError(''); }}
-              >
+                onClick={() => { setUploadTab('file'); setError(''); }}>
                 <Upload size={16} /> 파일 업로드
               </button>
-              <button
-                id="tab-paste"
+              <button id="tab-paste"
                 className={`${styles.uploadTab} ${uploadTab === 'paste' ? styles.tabActive : ''}`}
-                onClick={() => { setUploadTab('paste'); setError(''); }}
-              >
+                onClick={() => { setUploadTab('paste'); setError(''); }}>
                 <ClipboardPaste size={16} /> 데이터 붙여넣기
               </button>
             </div>
 
-            {/* FILE UPLOAD TAB */}
+            {/* 파일 업로드 */}
             {uploadTab === 'file' && (
               <div
                 id="dropzone"
@@ -212,16 +219,17 @@ export default function UploadPage() {
                     </button>
                   </>
                 )}
-                <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInput} style={{ display: 'none' }} />
+                <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv"
+                  onChange={handleInput} style={{ display: 'none' }} />
               </div>
             )}
 
-            {/* PASTE TAB */}
+            {/* 붙여넣기 */}
             {uploadTab === 'paste' && (
               <div className={styles.pasteSection}>
                 <div className={styles.pasteHint}>
                   <span>💡</span>
-                  <p>Excel 또는 Google Sheets에서 셀을 선택 후 <kbd>Ctrl+C</kbd> 복사 → 아래 영역에 <kbd>Ctrl+V</kbd> 붙여넣기</p>
+                  <p>Excel에서 셀 선택 후 <kbd>Ctrl+C</kbd> → 아래 영역에 <kbd>Ctrl+V</kbd></p>
                 </div>
                 <textarea
                   id="paste-area"
@@ -229,36 +237,30 @@ export default function UploadPage() {
                   value={pasteText}
                   onChange={e => { setPasteText(e.target.value); setError(''); }}
                   onPaste={e => {
-                    // Auto-submit after short delay to let state update
                     setTimeout(() => {
                       const text = e.clipboardData.getData('text');
-                      if (text.trim()) {
-                        setPasteText(text);
-                      }
+                      if (text.trim()) setPasteText(text);
                     }, 50);
                   }}
-                  placeholder={'헤더\t컬럼1\t컬럼2\n데이터1\t100\t200\n데이터2\t300\t400\n\n예시처럼 Excel에서 Ctrl+C 후 여기에 Ctrl+V 하세요'}
+                  placeholder={'연도\tSubsidiary\tCategory\t1월\t2월\n2024\tLGEIN\tHS\t120\t115\n...'}
                   rows={12}
                   spellCheck={false}
                 />
                 <div className={styles.pasteActions}>
                   <span className={styles.pasteCount}>
-                    {pasteText ? `${pasteText.split('\n').filter(l => l.trim()).length}행 감지됨` : '데이터를 붙여넣어 주세요'}
+                    {pasteText
+                      ? `${pasteText.split('\n').filter(l => l.trim()).length}행 감지됨`
+                      : '데이터를 붙여넣어 주세요'}
                   </span>
-                  <button
-                    className="btn btn-secondary btn-sm"
+                  <button className="btn btn-secondary btn-sm"
                     onClick={() => { setPasteText(''); setError(''); }}
-                    disabled={!pasteText}
-                    id="paste-clear-btn"
-                  >
+                    disabled={!pasteText} id="paste-clear-btn">
                     <X size={14} /> 지우기
                   </button>
-                  <button
-                    className="btn btn-primary"
+                  <button className="btn btn-primary"
                     onClick={handlePasteSubmit}
                     disabled={!pasteText.trim() || pasteProcessing}
-                    id="paste-submit-btn"
-                  >
+                    id="paste-submit-btn">
                     {pasteProcessing ? '분석 중...' : <><ClipboardPaste size={16} /> 데이터 분석</>}
                   </button>
                 </div>
@@ -272,8 +274,9 @@ export default function UploadPage() {
                 <button onClick={() => setError('')}><X size={14} /></button>
               </div>
             )}
+
             <div className={styles.sampleSection}>
-              <p>샘플 데이터로 먼저 체험해보세요</p>
+              <p>샘플 APAC 데이터로 먼저 체험해보세요</p>
               <button className="btn btn-ghost" onClick={loadSample} id="sample-data-btn">
                 샘플 데이터 불러오기
               </button>
@@ -281,17 +284,23 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* STEP 2: PREVIEW */}
+        {/* ───────────────────────────────────────────────
+            STEP 2: 데이터 확인 (Preview)
+        ─────────────────────────────────────────────── */}
         {step === 'preview' && result && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
                 <h1 className={styles.title}>데이터 확인</h1>
-                <p className={styles.subtitle}><FileSpreadsheet size={14} /> {fileName} · {result.data.length.toLocaleString()}행 · {result.headers.length}열</p>
+                <p className={styles.subtitle}>
+                  <FileSpreadsheet size={14} /> {fileName} · {result.data.length.toLocaleString()}행 · {result.headers.length}열
+                </p>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('upload')} id="back-upload-btn">← 다시 업로드</button>
-                <button className="btn btn-primary" onClick={() => setStep('repair')} id="next-map-btn">
+                <button className="btn btn-secondary" onClick={() => setStep('upload')} id="back-upload-btn">
+                  ← 다시 업로드
+                </button>
+                <button className="btn btn-primary" onClick={() => setStep('repair')} id="next-repair-btn">
                   데이터 정제 <ArrowRight size={16} />
                 </button>
               </div>
@@ -306,108 +315,57 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* STEP 2.5: DATA REPAIR */}
+        {/* ───────────────────────────────────────────────
+            STEP 3: 데이터 정제
+        ─────────────────────────────────────────────── */}
         {step === 'repair' && result && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
                 <h1 className={styles.title}>데이터 정제</h1>
-                <p className={styles.subtitle}>결측값·컬럼명 문제를 수정하고 테이블을 완성하세요</p>
+                <p className={styles.subtitle}>문제 항목을 선택하면 Before/After를 미리보고 적용할 수 있습니다</p>
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('preview')} id="back-to-preview-btn">← 데이터 확인</button>
-              </div>
+              <button className="btn btn-secondary" onClick={() => setStep('preview')} id="back-preview-btn">
+                ← 데이터 확인
+              </button>
             </div>
-            <DataRepair onDone={() => setStep('gallery')} />
+            <DataRepair onDone={() => setStep('intent')} />
           </div>
         )}
 
-        {/* STEP 3: CHART GALLERY (자동 케이스 미리보기) */}
-        {step === 'gallery' && (
+        {/* ───────────────────────────────────────────────
+            STEP 4: 분석 의도 설정
+        ─────────────────────────────────────────────── */}
+        {step === 'intent' && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
-                <h1 className={styles.title}>차트 유형 선택</h1>
-                <p className={styles.subtitle}>데이터를 분석해 {'{'}N{'}'}가지 차트를 자동으로 생성했습니다</p>
+                <h1 className={styles.title}>분석 설정</h1>
+                <p className={styles.subtitle}>무엇을 보고 싶은지 선택하세요 — 비교 기준 / 기간 / 대상 / 그룹</p>
               </div>
-              <button className="btn btn-secondary" onClick={() => setStep('repair')} id="back-to-repair-btn">
+              <button className="btn btn-secondary" onClick={() => setStep('repair')} id="back-repair-btn">
                 ← 데이터 정제
               </button>
             </div>
-            <ChartGallery
-              onDone={() => setStep('transform')}
-              onAdvanced={() => setStep('map')}
-            />
+            <AnalysisIntent onDone={() => setStep('builder')} />
           </div>
         )}
 
-        {/* STEP 3b: 직접 축 설정 (고급) */}
-        {step === 'map' && (
+        {/* ───────────────────────────────────────────────
+            STEP 5: 차트 빌더 (실시간 미리보기)
+        ─────────────────────────────────────────────── */}
+        {step === 'builder' && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
-                <h1 className={styles.title}>직접 설정</h1>
-                <p className={styles.subtitle}>가로·세로축을 직접 선택하거나 기간/YoY를 세부 설정합니다</p>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('gallery')} id="back-gallery-btn">
-                  ← 차트 선택으로
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setStep('transform')}
-                  id="next-transform-btn"
-                  disabled={!canGoTransform}
-                >
-                  데이터 변환 <ArrowRight size={16} />
-                </button>
+                <h1 className={styles.title}>차트 빌더</h1>
+                <p className={styles.subtitle}>차트 타입 · 색상 · 정렬을 조정하고 실시간으로 미리보세요</p>
               </div>
             </div>
-            <SmartAxisMapper headers={state.headers} onDone={() => setStep('transform')} />
+            <ChartBuilder onBack={() => setStep('intent')} />
           </div>
         )}
 
-        {/* STEP 4: DATA TRANSFORM */}
-        {step === 'transform' && result && (
-          <div className="animate-fadeIn">
-            <div className={styles.stepHeader}>
-              <div>
-                <h1 className={styles.title}>데이터 변환</h1>
-                <p className={styles.subtitle}>수치를 그대로 쓸지, 비중(%)으로 바꿀지 선택하세요</p>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('map')} id="back-map-btn">← 축 설정</button>
-                <button className="btn btn-primary" onClick={() => setStep('config')} id="next-config-btn">
-                  그래프 설정 <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-            <DataTransform />
-          </div>
-        )}
-
-        {/* STEP 5: GRAPH CONFIG */}
-        {step === 'config' && result && (
-          <div className="animate-fadeIn">
-            <div className={styles.stepHeader}>
-              <div>
-                <h1 className={styles.title}>그래프 설정</h1>
-                <p className={styles.subtitle}>그래프를 어떻게 그릴지 선택하세요 — 수치 방식, 구분 기준, 차트 유형</p>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('transform')} id="back-transform-btn">← 데이터 변환</button>
-                <button
-                  className="btn btn-primary"
-                  id="go-chart-btn"
-                  onClick={() => router.push('/chart')}
-                >
-                  차트 생성 <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-            <AnalysisConfig headers={result.headers} />
-          </div>
-        )}
       </main>
     </div>
   );

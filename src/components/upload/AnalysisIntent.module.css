@@ -1,0 +1,127 @@
+.root { display: flex; flex-direction: column; gap: 24px; }
+
+/* 4-panel grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+
+/* 카드 */
+.card {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 22px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  position: relative;
+}
+
+.cardNum {
+  position: absolute; top: 16px; right: 16px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,212,255,0.12);
+  color: var(--accent-aqua);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 800;
+}
+
+.cardTitle {
+  font-size: 1rem; font-weight: 800; color: var(--text-primary);
+  padding-right: 30px;
+}
+.cardDesc { font-size: 0.8rem; color: var(--text-muted); margin-top: -8px; }
+
+/* 라디오 그룹 */
+.radioGroup { display: flex; flex-direction: column; gap: 8px; }
+
+.radioRow {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.radioRow:hover { border-color: rgba(0,212,255,0.3); }
+.radioRow input[type="radio"] { accent-color: var(--accent-aqua); margin-top: 2px; flex-shrink: 0; }
+
+.radioOn {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.06) !important;
+}
+
+.radioLabel { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); display: block; }
+.radioDesc  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; display: block; }
+
+/* Custom 기간 */
+.customRange {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px;
+  background: rgba(0,212,255,0.04);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: var(--radius-md);
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+.customRow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.customLbl { font-size: 0.78rem; color: var(--text-muted); width: 60px; flex-shrink: 0; }
+.sel {
+  padding: 5px 8px; border-radius: var(--radius-sm);
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); font-family: inherit; font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.prevToggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.83rem; color: var(--text-secondary); cursor: pointer;
+}
+.prevToggle input { accent-color: var(--accent-aqua); }
+
+/* 체크박스 그룹 */
+.checkGroup { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.checkRow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.checkRow:hover { border-color: rgba(0,212,255,0.3); }
+.checkRow input[type="checkbox"] { accent-color: var(--accent-aqua); }
+.checkLabel { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+
+.checkOn {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.08) !important;
+}
+
+.noDetect { font-size: 0.83rem; color: var(--accent-orange); }
+
+/* 설정 요약 배너 */
+.summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.06));
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.88rem; color: var(--text-secondary);
+}
+.summary strong { color: var(--text-primary); }
+.summaryIcon { font-size: 1.1rem; }
+
+/* 푸터 */
+.footer {
+  display: flex; align-items: center; gap: 12px;
+  padding-top: 8px; border-top: 1px solid var(--border-subtle);
+}

@@ -1,0 +1,114 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* 그리드 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* 카드 */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.card:hover {
+  border-color: rgba(0,212,255,0.4);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,212,255,0.08);
+}
+.cardSelected {
+  border-color: var(--accent-aqua) !important;
+  background: rgba(0,212,255,0.05) !important;
+  box-shadow: 0 0 0 2px rgba(0,212,255,0.2), 0 8px 32px rgba(0,212,255,0.12) !important;
+}
+
+/* 선택 체크 배지 */
+.checkBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: var(--bg-primary);
+  border-radius: 50%;
+  padding: 2px;
+}
+
+/* 미리보기 영역 */
+.previewArea {
+  width: 100%;
+  padding: 12px 8px 0;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* 카드 정보 */
+.cardInfo {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.cardEmoji {
+  font-size: 1.1rem;
+}
+.cardDesc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* 푸터 */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.footerHint {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}

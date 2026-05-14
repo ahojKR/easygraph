@@ -8,22 +8,24 @@ import { useChart } from '@/context/ChartContext';
 import SmartAxisMapper from './SmartAxisMapper';
 import DataPreview from './DataPreview';
 import DataRepair from './DataRepair';
+import ChartGallery from './ChartGallery';
 import AnalysisConfig from './AnalysisConfig';
 import DataTransform from './DataTransform';
 import styles from './UploadPage.module.css';
 
-type Step = 'upload' | 'preview' | 'repair' | 'map' | 'transform' | 'config';
+type Step = 'upload' | 'preview' | 'repair' | 'gallery' | 'map' | 'transform' | 'config';
 
 const STEP_LABELS: Record<Step, string> = {
   upload:    '파일 업로드',
   preview:   '데이터 확인',
   repair:    '데이터 정제',
-  map:       '축 설정',
+  gallery:   '차트 선택',
+  map:       '직접 설정',
   transform: '데이터 변환',
   config:    '그래프 설정',
 };
 
-const STEP_ORDER: Step[] = ['upload', 'preview', 'repair', 'map', 'transform', 'config'];
+const STEP_ORDER: Step[] = ['upload', 'preview', 'repair', 'gallery', 'transform', 'config'];
 
 export default function UploadPage() {
   const router = useRouter();
@@ -316,26 +318,46 @@ export default function UploadPage() {
                 <button className="btn btn-secondary" onClick={() => setStep('preview')} id="back-to-preview-btn">← 데이터 확인</button>
               </div>
             </div>
-            <DataRepair onDone={() => setStep('map')} />
+            <DataRepair onDone={() => setStep('gallery')} />
           </div>
         )}
 
-        {/* STEP 3: AXIS MAPPING */}
+        {/* STEP 3: CHART GALLERY (자동 케이스 미리보기) */}
+        {step === 'gallery' && (
+          <div className="animate-fadeIn">
+            <div className={styles.stepHeader}>
+              <div>
+                <h1 className={styles.title}>차트 유형 선택</h1>
+                <p className={styles.subtitle}>데이터를 분석해 {'{'}N{'}'}가지 차트를 자동으로 생성했습니다</p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setStep('repair')} id="back-to-repair-btn">
+                ← 데이터 정제
+              </button>
+            </div>
+            <ChartGallery
+              onDone={() => setStep('transform')}
+              onAdvanced={() => setStep('map')}
+            />
+          </div>
+        )}
+
+        {/* STEP 3b: 직접 축 설정 (고급) */}
         {step === 'map' && (
           <div className="animate-fadeIn">
             <div className={styles.stepHeader}>
               <div>
-                <h1 className={styles.title}>축 설정</h1>
-                <p className={styles.subtitle}>가로·세로축에 표시할 내용을 선택하세요</p>
+                <h1 className={styles.title}>직접 설정</h1>
+                <p className={styles.subtitle}>가로·세로축을 직접 선택하거나 기간/YoY를 세부 설정합니다</p>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setStep('repair')} id="back-preview-btn">← 데이터 정제</button>
+                <button className="btn btn-secondary" onClick={() => setStep('gallery')} id="back-gallery-btn">
+                  ← 차트 선택으로
+                </button>
                 <button
                   className="btn btn-primary"
                   onClick={() => setStep('transform')}
                   id="next-transform-btn"
                   disabled={!canGoTransform}
-                  title={!canGoTransform ? 'X축과 Y축을 선택해주세요' : ''}
                 >
                   데이터 변환 <ArrowRight size={16} />
                 </button>

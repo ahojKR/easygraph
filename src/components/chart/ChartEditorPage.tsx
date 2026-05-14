@@ -13,7 +13,7 @@ import InsightPanel from './InsightPanel';
 import DataTable from './DataTable';
 import KPIBar from './KPIBar';
 import styles from './ChartEditorPage.module.css';
-import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText } from 'lucide-react';
+import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText, Presentation } from 'lucide-react';
 
 export default function ChartEditorPage() {
   const router       = useRouter();
@@ -107,6 +107,38 @@ export default function ChartEditorPage() {
               id="export-pdf-btn"
             >
               <FileText size={14} /> PDF
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={async () => {
+                const { exportToPPT } = await import('@/lib/exportPPT');
+                // 차트 이미지 캡쳐 (html2canvas)
+                let imgBase64 = '';
+                if (chartRef.current) {
+                  try {
+                    const { default: html2canvas } = await import('html2canvas');
+                    const canvas = await html2canvas(chartRef.current, { backgroundColor: '#0f1628', scale: 2 });
+                    imgBase64 = canvas.toDataURL('image/png');
+                  } catch (_) { /* ignore */ }
+                }
+                const kpiText = (state.insights ?? [])
+                  .filter(i => i.type === 'trend' && i.value !== undefined)
+                  .map(i => `${i.title}: ${i.value! > 0 ? '+' : ''}${i.value}%`)
+                  .join(' | ');
+                const insightLines = (state.insights ?? [])
+                  .filter(i => i.type !== 'trend')
+                  .slice(0, 3)
+                  .map(i => i.content ?? i.text ?? '');
+                await exportToPPT({
+                  chartTitle: state.options.chartTitle || 'EasyGraph 분석 리포트',
+                  chartImage: imgBase64,
+                  kpiText,
+                  insightLines,
+                });
+              }}
+              id="export-ppt-btn"
+            >
+              <Presentation size={14} /> PPT
             </button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { detectDataSchema, DataSchema } from '@/lib/schemaDetect';
 import {
   PeriodDef, aggregateByPeriod, toChartData, buildKPIs
 } from '@/lib/periodEngine';
+import { generateInsights } from '@/lib/insightEngine';
 import styles from './AnalysisSetup.module.css';
 import { Plus, Trash2, ChevronRight, CheckCircle2, BarChart3 } from 'lucide-react';
 
@@ -87,17 +88,14 @@ export default function AnalysisSetup({ onDone }: Props) {
   const apply = useCallback(() => {
     if (!schema.row.subsidiaryCol || periods.length === 0) return;
 
-    const aggRows = aggregateByPeriod(state.rawData, schema, periods, useAvg);
+    const aggRows  = aggregateByPeriod(state.rawData, schema, periods, useAvg);
     const chartPts = toChartData(aggRows, yoyPairs.length ? yoyPairs : undefined);
-    const kpis = yoyPairs.length
+    const kpis     = yoyPairs.length
       ? buildKPIs(aggRows, yoyPairs[0][0], yoyPairs[0][1])
       : [];
 
-    // X축 = "Subsidiary\nPeriod" 복합키, Y축 = categories
     const categories = [...new Set(aggRows.map(r => r.category))];
     const xAxisCol   = 'x';
-
-    // chartPts → Row[] (ChartContext 형식)
     const displayRows: Row[] = chartPts.map(pt => ({ ...pt } as unknown as Row));
 
     dispatch({ type: 'SET_DISPLAY_DATA', payload: { data: displayRows, transformType: 'none' } });
@@ -105,18 +103,21 @@ export default function AnalysisSetup({ onDone }: Props) {
     dispatch({ type: 'SET_Y_AXES',  payload: categories });
     dispatch({ type: 'SET_CHART_TYPE', payload: 'stacked-bar' });
 
-    // KPI를 별도 필드로 저장 (insight 활용)
-    if (kpis.length) {
-      const insights = kpis.map(k => ({
-        id: k.subsidiary,
-        type: 'trend' as const,
-        title: k.subsidiary,
-        content: `${k.periodA}: ${k.totalA.toLocaleString()} / YoY ${k.yoyGrowth > 0 ? '+' : ''}${k.yoyGrowth}%`,
-        value: k.yoyGrowth,
-      }));
-      dispatch({ type: 'SET_INSIGHTS', payload: insights });
-    }
+    // insightEngine으로 자동 인사이트 생성
+    const periodALabel = periods.find(p => p.id === (yoyPairs[0]?.[0] ?? periods[0]?.id))?.label ?? '';
+    const periodBLabel = periods.find(p => p.id === (yoyPairs[0]?.[1] ?? ''))?.label;
+    const autoInsights = kpis.length
+      ? generateInsights(kpis, aggRows, periodALabel, periodBLabel)
+      : kpis.map(k => ({
+          id: k.subsidiary,
+          type: 'trend' as const,
+          title: k.subsidiary,
+          content: `${k.periodA}: ${k.totalA.toLocaleString()}`,
+          value: k.yoyGrowth,
+          severity: 'info' as const,
+        }));
 
+    dispatch({ type: 'SET_INSIGHTS', payload: autoInsights });
     setApplied(true);
   }, [schema, periods, state.rawData, useAvg, yoyPairs, dispatch]);
 

@@ -97,11 +97,12 @@ export default function SettingsPanel() {
       </div>
       <div className={styles.colorSchemes}>
         {[
-          { id: 'default', label: '기본', colors: ['#00d4ff','#7c3aed','#10b981','#f59e0b'] },
-          { id: 'ocean',   label: '오션', colors: ['#0ea5e9','#06b6d4','#14b8a6','#0891b2'] },
-          { id: 'sunset',  label: '선셋', colors: ['#f97316','#ec4899','#a855f7','#ef4444'] },
+          { id: 'default', label: '기본',    colors: ['#00d4ff','#7c3aed','#10b981','#f59e0b'] },
+          { id: 'ocean',   label: '오션',    colors: ['#0ea5e9','#06b6d4','#14b8a6','#0891b2'] },
+          { id: 'sunset',  label: '선셋',    colors: ['#f97316','#ec4899','#a855f7','#ef4444'] },
           { id: 'forest',  label: '포레스트', colors: ['#22c55e','#84cc16','#10b981','#16a34a'] },
-          { id: 'mono',    label: '모노',  colors: ['#f0f4ff','#8892b0','#4a5568','#2d3748'] },
+          { id: 'mono',    label: '모노',    colors: ['#f0f4ff','#8892b0','#4a5568','#2d3748'] },
+          { id: 'bw',      label: 'B/W',    colors: ['#2d3748','#718096','#cbd5e0','#edf2f7'] },
         ].map(scheme => (
           <button
             key={scheme.id}

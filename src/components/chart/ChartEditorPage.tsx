@@ -13,7 +13,7 @@ import InsightPanel from './InsightPanel';
 import DataTable from './DataTable';
 import KPIBar from './KPIBar';
 import styles from './ChartEditorPage.module.css';
-import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText, Presentation, Copy } from 'lucide-react';
+import { BarChart2, RefreshCw, ArrowLeft, FileImage, FileText, Presentation, Copy, Sheet } from 'lucide-react';
 
 export default function ChartEditorPage() {
   const router       = useRouter();
@@ -110,9 +110,9 @@ export default function ChartEditorPage() {
             </button>
             <button
               className="btn btn-ghost btn-sm"
+              id="export-ppt-btn"
               onClick={async () => {
                 const { exportToPPT } = await import('@/lib/exportPPT');
-                // 차트 이미지 캡쳐 (html2canvas)
                 let imgBase64 = '';
                 if (chartRef.current) {
                   try {
@@ -136,9 +136,31 @@ export default function ChartEditorPage() {
                   insightLines,
                 });
               }}
-              id="export-ppt-btn"
             >
               <Presentation size={14} /> PPT
+            </button>
+
+            {/* ── Excel 다운로드 (데이터 + 연동 차트) ── */}
+            <button
+              className="btn btn-success btn-sm"
+              id="export-excel-btn"
+              title="데이터 + 차트 Excel 다운로드 (데이터 수정 시 차트 자동 갱신)"
+              onClick={async () => {
+                if (!hasData) return;
+                const { exportExcelWithChart } = await import('@/lib/exportExcelChart');
+                await exportExcelWithChart(
+                  state.displayData,
+                  state.xAxis,
+                  state.yAxes,
+                  {
+                    title:       state.options.chartTitle || state.fileName || 'EasyGraph',
+                    chartType:   (state.chartType as 'bar' | 'stacked-bar' | 'line') || 'stacked-bar',
+                    colorScheme: state.options.colorScheme,
+                  },
+                );
+              }}
+            >
+              <Sheet size={14} /> Excel
             </button>
             <button
               className="btn btn-ghost btn-sm"

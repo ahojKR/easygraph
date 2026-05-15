@@ -125,3 +125,19 @@
   display: flex; align-items: center; gap: 12px;
   padding-top: 8px; border-top: 1px solid var(--border-subtle);
 }
+
+/* 카드 부제 */
+.cardSubtitle { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); }
+
+/* 전체선택 버튼 행 */
+.selectAllRow {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.selAllBtn {
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--border-subtle);
+  background: none; color: var(--text-muted);
+  font-family: inherit; font-size: 0.75rem;
+  cursor: pointer; transition: all var(--transition-fast);
+}
+.selAllBtn:hover { border-color: var(--accent-aqua); color: var(--accent-aqua); }

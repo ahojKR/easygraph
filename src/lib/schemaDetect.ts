@@ -16,15 +16,76 @@ export interface ColSchema {
   monthCols: string[];      // 실제 월 데이터 컬럼 (24년 1월 형태)
 }
 
+// ─── 공통 패턴 ─────────────────────────────────────────
+const SUMMARY_PATTERN = /요약|total|합계|소계|subtotal|sum/i;
+
+// ─── 크로스탭 스키마 (국가×연도, 항목×기간 등) ───────────
+export interface CrossTabSchema {
+  rowLabelCol: string;    // 첫 번째 텍스트 컬럼 (국가코드, 항목명 등)
+  rowItems:    string[];  // 행 값 목록 (AP, TH, VH, ...)
+  valueCols:   string[];  // 숫자 컬럼 목록 (Y22, Y23, Y24, Y25)
+  isYearCols:  boolean;   // 숫자 컬럼이 연도 패턴인지
+}
+
 export interface DataSchema {
   row: RowSchema;
   col: ColSchema;
+  crossTab:       CrossTabSchema | null;   // 크로스탭 구조 감지 결과
   isHierarchical: boolean;
-  hasYoY: boolean;          // 2년 이상 데이터 있는 경우
+  isCrossTab:     boolean;
+  hasYoY: boolean;
 }
 
-// ─── 소계행 패턴 ────────────────────────────────────────
-const SUMMARY_PATTERN = /요약|total|합계|소계|subtotal|sum/i;
+// 연도 컬럼 패턴: Y22, Y23, 2022, 2023, '22, '23 등
+const YEAR_COL_PATTERN = /^(y\d{2,4}|'\d{2}|\d{4}|FY\d{2,4})$/i;
+
+function detectCrossTab(data: Row[], headers: ColumnDef[]): CrossTabSchema | null {
+  if (data.length < 2) return null;
+
+  const textCols   = headers.filter(h => h.type !== 'number');
+  const numCols    = headers.filter(h => h.type === 'number');
+
+  // 크로스탭 조건: 텍스트 컬럼 1~2개 + 숫자 컬럼 2개 이상
+  if (textCols.length === 0 || numCols.length < 2) return null;
+
+  // 첫 텍스트 컬럼을 행 라벨로 사용
+  const rowLabelCol = textCols[0].name;
+  const rowItems = [...new Set(
+    data.map(r => String(r[rowLabelCol] ?? '').trim()).filter(v => v && v !== '-')
+  )].slice(0, 50);
+
+  if (rowItems.length < 2) return null;
+
+  // 숫자 컬럼이 연도 패턴인지 확인
+  const isYearCols = numCols.every(c => YEAR_COL_PATTERN.test(c.name));
+
+  return {
+    rowLabelCol,
+    rowItems,
+    valueCols: numCols.map(c => c.name),
+    isYearCols,
+  };
+}
+
+// ─── 종합 스키마 ────────────────────────────────────────
+export function detectDataSchema(data: Row[], headers: ColumnDef[]): DataSchema {
+  const row     = detectRowSchema(data, headers);
+  const col     = detectColSchema(headers);
+  const isHierarchical = !!(row.subsidiaryCol && row.categoryCol);
+
+  // 계층형이 아닐 때 크로스탭 감지
+  const crossTab = !isHierarchical ? detectCrossTab(data, headers) : null;
+
+  return {
+    row,
+    col,
+    crossTab,
+    isHierarchical,
+    isCrossTab: !!crossTab && !isHierarchical,
+    hasYoY: col.years.length >= 2 || !!(crossTab?.isYearCols && crossTab.valueCols.length >= 2),
+  };
+}
+
 
 // ─── 행 구조 감지 ───────────────────────────────────────
 export function detectRowSchema(data: Row[], headers: ColumnDef[]): RowSchema {
@@ -108,18 +169,7 @@ export function detectColSchema(headers: ColumnDef[]): ColSchema {
   return { years, yearColMap, summaryColumns, monthCols };
 }
 
-// ─── 종합 스키마 ────────────────────────────────────────
-export function detectDataSchema(data: Row[], headers: ColumnDef[]): DataSchema {
-  const row = detectRowSchema(data, headers);
-  const col = detectColSchema(headers);
 
-  return {
-    row,
-    col,
-    isHierarchical: !!(row.subsidiaryCol && row.categoryCol),
-    hasYoY: col.years.length >= 2,
-  };
-}
 
 // ─── 데이터 유틸 ────────────────────────────────────────
 

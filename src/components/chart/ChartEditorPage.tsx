@@ -57,46 +57,23 @@ export default function ChartEditorPage() {
     }
   }, [isDemo, state.rawData.length, dispatch]);
 
-  // Generate insights - 연간 데이터면 displayData 기반 YoY, 아니면 mockInsights
-  useEffect(() => {
-    if (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0) {
-      const YEAR_PAT = /^(Y|FY)?\d{2,4}$/i;
-      const isYearAxis = state.displayData
-        .every(r => YEAR_PAT.test(String(r[state.xAxis] ?? '').trim()));
+  // ── 연도 패턴 판별 툧스퍼 
+  const YEAR_PAT = /^(Y|FY)?\d{2,4}$/i;
+  const isYearAxis = state.displayData.length > 0 && state.xAxis
+    ? state.displayData.every(r => YEAR_PAT.test(String(r[state.xAxis] ?? '').trim()))
+    : false;
 
-      if (isYearAxis) {
-        // ── 연도별 정렬 후 연속 YoY 계산 ──────────────────
-        const sorted = [...state.displayData].sort((a, b) => {
-          const an = parseInt(String(a[state.xAxis]).replace(/\D/g, ''), 10) || 0;
-          const bn = parseInt(String(b[state.xAxis]).replace(/\D/g, ''), 10) || 0;
-          return an - bn;
-        });
-        const kpis = sorted.slice(1).map((row, i) => {
-          const prev = sorted[i];
-          const curT  = state.yAxes.reduce((s, y) => s + (Number(row[y])  || 0), 0);
-          const prvT  = state.yAxes.reduce((s, y) => s + (Number(prev[y]) || 0), 0);
-          const yoy   = prvT > 0 ? Math.round(((curT - prvT) / prvT) * 1000) / 10 : 0;
-          const label = String(row[state.xAxis]);
-          const prevL = String(prev[state.xAxis]);
-          return {
-            id:       label,
-            type:     'trend'   as const,
-            title:    label,                     // e.g. 'Y25'
-            content:  `vs ${prevL}: ${yoy > 0 ? '+' : ''}${yoy}%`,
-            value:    yoy,
-            severity: (yoy >= 0 ? 'positive' : 'warning') as 'positive' | 'warning',
-          };
-        });
-        dispatch({ type: 'SET_INSIGHTS', payload: kpis });
-      } else {
-        // ── 월별/분기별 등 → 기존 mock insights ───────────
-        const insights = generateMockInsights(
-          state.rawData, state.xAxis, state.yAxes, state.fileName,
-        );
-        dispatch({ type: 'SET_INSIGHTS', payload: insights });
-      }
-    }
-  }, [state.displayData, state.xAxis, state.yAxes, state.rawData, state.fileName, dispatch]);
+  // Insights 생성:
+  //   ・ 연간 데이터(Y22/Y25 등) → AnalysisIntent에서 원본값 기반 YoY KPI 설정, 여기서 겹쓰지 않음
+  //   ・ 월별/분기별 등 → generateMockInsights 사용
+  useEffect(() => {
+    if (!state.displayData.length || !state.xAxis || !state.yAxes.length) return;
+    if (isYearAxis) return;   // 연간: AnalysisIntent insights 유지
+    const insights = generateMockInsights(
+      state.rawData, state.xAxis, state.yAxes, state.fileName,
+    );
+    dispatch({ type: 'SET_INSIGHTS', payload: insights });
+  }, [isYearAxis, state.displayData, state.xAxis, state.yAxes, state.rawData, state.fileName, dispatch]);
 
   // Use displayData (may be transformed) for rendering
   const enrichedData = (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0)
@@ -130,10 +107,12 @@ export default function ChartEditorPage() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => {
+              if (isYearAxis) return;  // 연간 데이터: KPI 배지 유지
               const insights = generateMockInsights(state.rawData, state.xAxis, state.yAxes, state.fileName);
               dispatch({ type: 'SET_INSIGHTS', payload: insights });
             }}
             id="refresh-insights-btn"
+            title={isYearAxis ? '연간 데이터: YoY KPI 자동 유지' : '인사이트 재생성'}
           >
             <RefreshCw size={14} /> 인사이트 갱신
           </button>

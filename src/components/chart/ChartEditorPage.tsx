@@ -57,13 +57,46 @@ export default function ChartEditorPage() {
     }
   }, [isDemo, state.rawData.length, dispatch]);
 
-  // Generate insights
+  // Generate insights - 연간 데이터면 displayData 기반 YoY, 아니면 mockInsights
   useEffect(() => {
-    if (state.rawData.length > 0 && state.xAxis && state.yAxes.length > 0) {
-      const insights = generateMockInsights(state.rawData, state.xAxis, state.yAxes, state.fileName);
-      dispatch({ type: 'SET_INSIGHTS', payload: insights });
+    if (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0) {
+      const YEAR_PAT = /^(Y|FY)?\d{2,4}$/i;
+      const isYearAxis = state.displayData
+        .every(r => YEAR_PAT.test(String(r[state.xAxis] ?? '').trim()));
+
+      if (isYearAxis) {
+        // ── 연도별 정렬 후 연속 YoY 계산 ──────────────────
+        const sorted = [...state.displayData].sort((a, b) => {
+          const an = parseInt(String(a[state.xAxis]).replace(/\D/g, ''), 10) || 0;
+          const bn = parseInt(String(b[state.xAxis]).replace(/\D/g, ''), 10) || 0;
+          return an - bn;
+        });
+        const kpis = sorted.slice(1).map((row, i) => {
+          const prev = sorted[i];
+          const curT  = state.yAxes.reduce((s, y) => s + (Number(row[y])  || 0), 0);
+          const prvT  = state.yAxes.reduce((s, y) => s + (Number(prev[y]) || 0), 0);
+          const yoy   = prvT > 0 ? Math.round(((curT - prvT) / prvT) * 1000) / 10 : 0;
+          const label = String(row[state.xAxis]);
+          const prevL = String(prev[state.xAxis]);
+          return {
+            id:       label,
+            type:     'trend'   as const,
+            title:    label,                     // e.g. 'Y25'
+            content:  `vs ${prevL}: ${yoy > 0 ? '+' : ''}${yoy}%`,
+            value:    yoy,
+            severity: (yoy >= 0 ? 'positive' : 'warning') as 'positive' | 'warning',
+          };
+        });
+        dispatch({ type: 'SET_INSIGHTS', payload: kpis });
+      } else {
+        // ── 월별/분기별 등 → 기존 mock insights ───────────
+        const insights = generateMockInsights(
+          state.rawData, state.xAxis, state.yAxes, state.fileName,
+        );
+        dispatch({ type: 'SET_INSIGHTS', payload: insights });
+      }
     }
-  }, [state.rawData, state.xAxis, state.yAxes, state.fileName, dispatch]);
+  }, [state.displayData, state.xAxis, state.yAxes, state.rawData, state.fileName, dispatch]);
 
   // Use displayData (may be transformed) for rendering
   const enrichedData = (state.displayData.length > 0 && state.xAxis && state.yAxes.length > 0)

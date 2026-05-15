@@ -94,7 +94,41 @@ export default function AnalysisIntent({ onDone }: Props) {
       dispatch({ type: 'SET_X_AXIS',     payload: '기간' });
       dispatch({ type: 'SET_Y_AXES',     payload: items });
       dispatch({ type: 'SET_CHART_TYPE', payload: 'stacked-bar' });
-      dispatch({ type: 'UPDATE_OPTIONS', payload: { colorScheme: 'bw', stacked: true, showDataLabels: ctBasis === 'pct' } });
+      dispatch({ type: 'UPDATE_OPTIONS', payload: {
+        colorScheme: 'bw', stacked: true,
+        showDataLabels: ctBasis === 'pct',
+        showMoMChange: false,   // 연간 데이터에 MoM 불필
+        showYoYChange: false,   // KPI는 직접 생성
+      } });
+
+      // ── 연도별 YoY KPI 배지 (모드 무관하게 항상 생성) ──
+      const sortedCols = [...cols].sort((a, b) => {
+        const an = parseInt(a.replace(/\D/g, ''), 10) || 0;
+        const bn = parseInt(b.replace(/\D/g, ''), 10) || 0;
+        return an - bn;
+      });
+      const yearTotals: Record<string, number> = {};
+      sortedCols.forEach(col => {
+        yearTotals[col] = items.reduce((s, it) => {
+          const row = filtered.find(r => String(r[rowLabelCol] ?? '').trim() === it);
+          return s + (Number(row?.[col]) || 0);
+        }, 0);
+      });
+      const kpiInsights = sortedCols.slice(1).map(col => {
+        const colIdx  = sortedCols.indexOf(col);
+        const prevCol2 = sortedCols[colIdx - 1];
+        const curT  = yearTotals[col];
+        const prvT  = yearTotals[prevCol2];
+        const yoy   = prvT > 0 ? Math.round(((curT - prvT) / prvT) * 1000) / 10 : 0;
+        return {
+          id: col, type: 'trend' as const,
+          title: col,  // ‘Y25’
+          content: `vs ${prevCol2}: ${prvT > 0 ? (yoy > 0 ? '+' : '') + yoy + '%' : 'N/A'}`,
+          value: yoy,
+          severity: (yoy >= 0 ? 'positive' : 'warning') as 'positive' | 'warning',
+        };
+      });
+      dispatch({ type: 'SET_INSIGHTS', payload: kpiInsights });
 
     } else {
       // X축 = 항목(행), Y축 = 연도(컬럼)  →  국가별 막대
@@ -114,18 +148,28 @@ export default function AnalysisIntent({ onDone }: Props) {
       dispatch({ type: 'UPDATE_OPTIONS', payload: { colorScheme: 'default', stacked: true, showDataLabels: false } });
     }
 
-    // YoY 인사이트
-    if (ctBasis === 'yoy' && cols.length >= 2) {
-      const lastCol = cols[cols.length - 1];
-      const prevCol = cols[cols.length - 2];
-      const insights = items.map(it => {
-        const row = filtered.find(r => String(r[rowLabelCol] ?? '').trim() === it);
-        const cur = Number(row?.[lastCol]) || 0;
-        const prv = Number(row?.[prevCol]) || 0;
-        const yoy = prv > 0 ? Math.round(((cur - prv) / prv) * 1000) / 10 : 0;
-        return { id: it, type: 'trend' as const, title: it, content: `${lastCol}: ${cur} / YoY ${yoy > 0 ? '+' : ''}${yoy}%`, value: yoy, severity: (yoy >= 0 ? 'positive' : 'warning') as 'positive' | 'warning' };
+    // YoY 인사이트: item-bar 모드에도 KPI 유지 (sortedCols 기준)
+    if (chartOrient !== 'year-stacked') {
+      const sortedCols2 = [...cols].sort((a, b) => {
+        const an = parseInt(a.replace(/\D/g, ''), 10) || 0;
+        const bn = parseInt(b.replace(/\D/g, ''), 10) || 0;
+        return an - bn;
       });
-      dispatch({ type: 'SET_INSIGHTS', payload: insights });
+      const yearTotals2: Record<string, number> = {};
+      sortedCols2.forEach(col => {
+        yearTotals2[col] = items.reduce((s, it) => {
+          const row = filtered.find(r => String(r[rowLabelCol] ?? '').trim() === it);
+          return s + (Number(row?.[col]) || 0);
+        }, 0);
+      });
+      const kpis2 = sortedCols2.slice(1).map(col => {
+        const idx2 = sortedCols2.indexOf(col);
+        const prev2 = sortedCols2[idx2 - 1];
+        const curT = yearTotals2[col], prvT = yearTotals2[prev2];
+        const yoy = prvT > 0 ? Math.round(((curT - prvT) / prvT) * 1000) / 10 : 0;
+        return { id: col, type: 'trend' as const, title: col, content: `vs ${prev2}: ${yoy > 0 ? '+' : ''}${yoy}%`, value: yoy, severity: (yoy >= 0 ? 'positive' : 'warning') as 'positive' | 'warning' };
+      });
+      dispatch({ type: 'SET_INSIGHTS', payload: kpis2 });
     }
 
     onDone();

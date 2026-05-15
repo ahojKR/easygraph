@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useChart } from '@/context/ChartContext';
 import { enrichData } from '@/lib/statistics';
@@ -21,6 +21,13 @@ export default function ChartEditorPage() {
   const isDemo       = searchParams.get('demo') === 'true';
   const { state, dispatch } = useChart();
   const chartRef = useRef<HTMLDivElement>(null);
+  const [excelLoading, setExcelLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   // Load demo data
   useEffect(() => {
@@ -144,23 +151,34 @@ export default function ChartEditorPage() {
             <button
               className="btn btn-success btn-sm"
               id="export-excel-btn"
-              title="데이터 + 차트 Excel 다운로드 (데이터 수정 시 차트 자동 갱신)"
+              title="데이터 + 차트 Excel 다운로드\n데이터 수정 시 차트 자동 갱신"
+              disabled={!hasData || excelLoading}
               onClick={async () => {
-                if (!hasData) return;
-                const { exportExcelWithChart } = await import('@/lib/exportExcelChart');
-                await exportExcelWithChart(
-                  state.displayData,
-                  state.xAxis,
-                  state.yAxes,
-                  {
-                    title:       state.options.chartTitle || state.fileName || 'EasyGraph',
-                    chartType:   (state.chartType as 'bar' | 'stacked-bar' | 'line') || 'stacked-bar',
-                    colorScheme: state.options.colorScheme,
-                  },
-                );
+                if (!hasData || excelLoading) return;
+                setExcelLoading(true);
+                try {
+                  const { exportExcelWithChart } = await import('@/lib/exportExcelChart');
+                  await exportExcelWithChart(
+                    state.displayData,
+                    state.xAxis,
+                    state.yAxes,
+                    {
+                      title:       state.options.chartTitle || state.fileName || 'EasyGraph',
+                      chartType:   (state.chartType as 'bar' | 'stacked-bar' | 'line') || 'stacked-bar',
+                      colorScheme: state.options.colorScheme,
+                    },
+                  );
+                  showToast('✅ Excel 파일 다운로드 완료! 데이터 수정 시 차트 자동 갱신');
+                } catch (e) {
+                  showToast('❌ Excel 생성 실패: ' + String(e));
+                } finally {
+                  setExcelLoading(false);
+                }
               }}
             >
-              <Sheet size={14} /> Excel
+              {excelLoading
+                ? <><span className="animate-spin" style={{ display:'inline-block', width:14, height:14, border:'2px solid currentColor', borderTopColor:'transparent', borderRadius:'50%' }}/> 생성 중...</>
+                : <><Sheet size={14} /> Excel</>}
             </button>
             <button
               className="btn btn-ghost btn-sm"
@@ -196,6 +214,21 @@ export default function ChartEditorPage() {
           </div>
         </div>
       </header>
+
+      {/* Toast 알림 */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(20,28,53,0.97)', border: '1px solid rgba(0,212,255,0.25)',
+          borderRadius: 12, padding: '12px 24px',
+          color: '#f0f4ff', fontSize: '0.9rem', fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          zIndex: 9999, whiteSpace: 'nowrap',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          {toast}
+        </div>
+      )}
 
       <div className={styles.body}>
         {/* LEFT: Settings Panel */}

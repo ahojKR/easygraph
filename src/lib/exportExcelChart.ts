@@ -25,10 +25,20 @@ export interface ExcelChartOptions {
   colorScheme?: string;  // 'bw' | 'default' | 'ocean' etc.
 }
 
-// ── BW 팔레트 오버라이드
+// ── BW 팔레트 (12단계 다크→라이트, 대시보드 색상과 동일)
 const BW_PALETTE = [
-  'FF2D3748', 'FF718096', 'FFCBD5E0', 'FFA0AEC0',
-  'FF4A5568', 'FFE2E8F0', 'FF1A202C', 'FF606060',
+  'FF0F1628', // 1. 매우 진한 네이비 (가장 어두움)
+  'FF1A2035', // 2. 다크 네이비
+  'FF2D3748', // 3. 다크 그레이
+  'FF4A5568', // 4. 미디엄 다크
+  'FF606878', // 5. 슬레이트
+  'FF718096', // 6. 미디엄 그레이
+  'FF8892B0', // 7. 블루 그레이
+  'FFA0AEC0', // 8. 라이트 미디엄
+  'FFBCC4D0', // 9. 라이트
+  'FFCBD5E0', // 10. 매우 라이트
+  'FFE2E8F0', // 11. 거의 흰색
+  'FFF0F4FF', // 12. 블루 화이트
 ];
 
 // ─── 컬럼 문자 변환 (0→A, 1→B, …)
@@ -92,11 +102,12 @@ function makeChartXml(
     <c:barDir val="col"/>
     <c:grouping val="${grouping}"/>
     <c:varyColors val="0"/>
+    <c:overlap val="${isStacked ? '100' : '0'}"/>
     ${seriesXml}
     <c:dLbls>
-      <c:numFmt formatCode="General" sourceLinked="1"/>
+      <c:numFmt formatCode="0.0" sourceLinked="0"/>
       <c:spPr><a:noFill/></c:spPr>
-      <c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900" b="0"/></a:pPr></a:p></c:txPr>
+      <c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="800" b="1" i="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:defRPr></a:pPr></a:p></c:txPr>
       <c:showLegendKey val="0"/>
       <c:showVal val="${isStacked ? '1' : '0'}"/>
       <c:showCatName val="0"/>
@@ -164,8 +175,8 @@ function makeChartXml(
     <c:dispBlanksAs val="gap"/>
   </c:chart>
   <c:spPr>
-    <a:solidFill><a:srgbClr val="1A2035"/></a:solidFill>
-    <a:ln><a:noFill/></a:ln>
+    <a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>
+    <a:ln w="9525"><a:solidFill><a:srgbClr val="DDDDDD"/></a:solidFill></a:ln>
   </c:spPr>
 </c:chartSpace>`;
 }
@@ -214,6 +225,11 @@ export async function exportExcelWithChart(
   } = options;
 
   const palette = colorScheme === 'bw' ? BW_PALETTE : PALETTE;
+  // bw가 아니어도 국가×연도 데이터엔 기본 팔레트 적용
+  // 12개 이상 시리즈일 때 팔레트 반복 방지
+  const effectivePalette = yAxes.length > PALETTE.length
+    ? [...BW_PALETTE, ...BW_PALETTE]  // fallback
+    : palette;
 
   // ── 1. 데이터 시트 생성 ────────────────────────────────────
   const headers = [xAxis, ...yAxes];
@@ -244,7 +260,7 @@ export async function exportExcelWithChart(
   // ── 3. 차트 XML 파일 추가 ─────────────────────────────────
   zip.file(
     'xl/charts/chart1.xml',
-    makeChartXml(xAxis, yAxes, rowCount, chartType, palette),
+    makeChartXml(xAxis, yAxes, rowCount, chartType, effectivePalette),
   );
 
   // chart1.xml.rels (차트 자체의 관계 - 빈 관계 파일)
